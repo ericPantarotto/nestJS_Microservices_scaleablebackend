@@ -20,6 +20,13 @@
 
 ![image info](./_notes/1_sc1.png)
 
+### **<span style='color: #6e7a73'>Project Dependencies**
+
+**<span style='color: #ffc5a6'>Link:** <https://pnpm.io/>
+
+### **<span style='color: #6e7a73'>Github Repository**
+
+**<span style='color: #ffc5a6'>Link:** <https://github.com/mguay22/sleepr>
 <!---
 [comment]: it works with text, you can rename it how you want
 
