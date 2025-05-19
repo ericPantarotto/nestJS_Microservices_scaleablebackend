@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD033 -->
 <!-- markdownlint-disable MD024 -->
-# **<span style='color: #6e7a73'>NestJS Microservices: Build & Deploy a scaleable Backend**
+# **<span style='color: #6e7a73'>NestJS Microservices: Build & Deploy a scalable Backend**
 
 ## **<span style='color: #6e7a73'>Generic Comments**
 
@@ -27,6 +27,24 @@
 ### **<span style='color: #6e7a73'>Github Repository**
 
 **<span style='color: #ffc5a6'>Link:** <https://github.com/mguay22/sleepr>
+
+### **<span style='color: #6e7a73'>Project Setup**
+
+`nest new 1_sleepr-setup`, choose `pnpm` as package manager
+
+`cd` into the project
+
+`pnpm run start`
+
+#### **<span style='color: #6e7a73'>Generate a common library**
+
+`nest generate library common`, a `tsconfig.lib.json` is created and extends the root `tsconfig.json`.
+
+root nestjs `tsconfig.json` is going to be shared amongst this common module library and all of the different applications and we can see the paths here that our application can use to access our common library
+
+`nest.cli` has a `projects` section with the common library specified
+
+the common library has a `common.service.ts`, as well as an `index.ts` exporting these, so that external applications can import them and use them.
 <!---
 [comment]: it works with text, you can rename it how you want
 
