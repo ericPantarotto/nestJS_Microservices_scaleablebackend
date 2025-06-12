@@ -10,9 +10,24 @@
 
 `npm init @eslint/config@latest`
 
-### VSCode Editor - fold level
+### **<span style='color: #6e7a73'>VSCode Editor - fold level**
 
 `CTRL + SHIFT + P: Fold level 2`
+
+### **<span style='color: #6e7a73'>PNPM commands**
+
+#### **<span style='color: #6e7a73'>update**
+
+`pnpm self-update`
+
+#### **<span style='color: #6e7a73'>start**
+
+`pnpm run start:dev` to listen to changes
+
+### **<span style='color: #6e7a73'>mongoDB**
+
+mongoDB VSCode connection string: mongodb+srv://ericpython1980:PASSWORD@cluster0.orqdni8.mongodb.net/
+mongosh: mongosh "mongodb+srv://cluster0.orqdni8.mongodb.net/" --apiVersion 1 --username ericpython1980 --password PASSWORD
 
 ## **<span style='color: #6e7a73'>Introduction**
 
@@ -45,6 +60,50 @@ root nestjs `tsconfig.json` is going to be shared amongst this common module lib
 `nest.cli` has a `projects` section with the common library specified
 
 the common library has a `common.service.ts`, as well as an `index.ts` exporting these, so that external applications can import them and use them.
+
+## **<span style='color: #6e7a73'>Common Library**
+
+### **<span style='color: #6e7a73'>Database & Config Module**
+
+`cd sleepr`
+
+`pnpm i @nestjs/mongoose mongoose`
+
+`pnpm i @nestjs/config`
+
+`nest generate module database -p common`
+
+`nest generate module config -p common`
+
+**<span style='color: #aacb73'> libs/common/config/config.module.ts**
+
+`import { ConfigModule as NestConfigModule } from '@nestjs/config';`
+
+**<span style='color: #8accb3'> Note:** the reason why we're abstracting our own config module and wrapping it around the nest one is because if we were to change the underlying configuration module, in this case the nest one, we only need to do it in one place
+
+`NestConfigModule.forRoot()`,  we are telling the nest config module to load in any environment variables that we have in memory, and also to read in any dot env files we have in our directory, which will be super important later on when we use the config service to read in these environment variables.
+
+**<span style='color: #aacb73'> tsconfig.json**
+
+```json
+"@app/common/*": [
+    "libs/common/src/*"
+  ]
+```
+
+we will always use our `@app/common` defined above so that we would have to change the path of that location in a single place only
+
+#### **<span style='color: #6e7a73'>joi**
+
+`pnpm i joi` for data validation
+
+**<span style='color: #8accb3'> Note:** for below error, `import * as Joi from 'joi';`
+
+![image info](./_notes/1_sc1.png)
+
+if we remove our connection uri, we get the following error, as expected:
+
+![image info](./_notes/1_sc1.png)
 <!---
 [comment]: it works with text, you can rename it how you want
 
