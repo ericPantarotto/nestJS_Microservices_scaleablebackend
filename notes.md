@@ -35,6 +35,8 @@ mongosh: mongosh "mongodb+srv://cluster0.orqdni8.mongodb.net/" --apiVersion 1 --
 
 ![image info](./_notes/1_sc1.png)
 
+a mono repository with several microservices, using a common library
+
 ### **<span style='color: #6e7a73'>Project Dependencies**
 
 **<span style='color: #ffc5a6'>Link:** <https://pnpm.io/>
@@ -99,11 +101,39 @@ we will always use our `@app/common` defined above so that we would have to chan
 
 **<span style='color: #8accb3'> Note:** for below error, `import * as Joi from 'joi';`
 
-![image info](./_notes/1_sc1.png)
+![image info](./_notes/2_sc1.png)
 
 if we remove our connection uri, we get the following error, as expected:
 
-![image info](./_notes/1_sc1.png)
+![image info](./_notes/2_sc2.png)
+
+### **<span style='color: #6e7a73'>Reservation CRUD**
+
+creating our first microservice: *reservations*, `nest g app reservations` which will create a new `apps` directory
+
+**<span style='color: #aacb73'> nest-cli.json** above command will add automatically a `1_sleepr` project reference that be removed in this file, and we also delete the folder created under `sleepr/apps/1_sleepr-setup`
+
+![image info](./_notes/2_sc3.png)
+
+for our mono-repo,  we also define our default project for `nest run` and `nest build` commands:
+
+```json
+"root": "apps/reservations"
+"sourceRoot": "apps/reservations/src",
+```
+
+**<span style='color: #8accb3'> Note:** when we start our nest application now defaulting to *reservations*: `pnpm start:dev`, our mongoose module is not initialized anymore, as when we created our monorepo via `nest g app reservations` deleted the `sleepr/src/app.module.ts` which was initializing this module:  that file
+
+![image info](./_notes/2_sc4.png)
+
+and we add it back to our **<span style='color: #aacb73'> reservations.module.ts**, which will initialize the moongose module when we start our app.
+
+![image info](./_notes/2_sc5.png)
+
+### **<span style='color: #6e7a73'>adding default CRUD**
+
+in order to add some default CRUD functionality to our reservations service, we can also use the *nest cli*: `nest g resource reservations`, choosing the default *REST API* transport layer. This will create boiler plate code for our CRUD operations, `sleepr/apps/reservations/src/reservations/reservations.controller.ts`
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
