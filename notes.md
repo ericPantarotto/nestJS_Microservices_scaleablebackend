@@ -134,6 +134,43 @@ and we add it back to our **<span style='color: #aacb73'> reservations.module.ts
 
 in order to add some default CRUD functionality to our reservations service, we can also use the *nest cli*: `nest g resource reservations`, choosing the default *REST API* transport layer. This will create boiler plate code for our CRUD operations, `sleepr/apps/reservations/src/reservations/reservations.controller.ts`
 
+### **<span style='color: #6e7a73'>Validation & Logging**
+
+`pnpm i class-validator class-transformer`
+
+`pnpm i nestjs-pino pino-http`
+
+`pnpm i pino-pretty`
+
+**<span style='color: #8accb3'> Note:** we're exposing the implementation for our logger in our individual microservice *reservations*. So if we have to reuse this, we would have duplicated code. I want to go ahead in our common library and create a new logger module that we can import into our individual microservices
+
+**<span style='color: #aacb73'> reservation.module.ts**
+
+```typescript
+Module({
+  imports: [
+    DatabaseModule,
+    DatabaseModule.forFeature([
+      { name: ReservationDocument.name, schema: ReservationSchema },
+    ]),
+    LoggerModule.forRoot({
+      pinoHttp: {
+        transport: {
+          target: 'pino-pretty',
+          options: { colorize: true, singleLine: true },
+        },
+      },
+    }),
+  ],
+})
+```
+
+`nest g module`, choose *common*
+
+**<span style='color: #aacb73'> /reservations/src/main.ts**
+
+`app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));`: `whitelist` will be exclude extra properties not specified in the `dto`
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
