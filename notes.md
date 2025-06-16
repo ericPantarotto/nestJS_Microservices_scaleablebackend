@@ -171,6 +171,74 @@ Module({
 
 `app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));`: `whitelist` will be exclude extra properties not specified in the `dto`
 
+### **<span style='color: #6e7a73'>Dockerize**
+
+**<span style='color: #8accb3'> Note:**  when we have to run multiple applications at once, I want to take advantage of Docker compose to be able to run multiple images at once.
+
+**<span style='color: #ffc5a6'>Docker Install:** <https://docs.docker.com/desktop/setup/install/linux/>
+
+**<span style='color: #f3b4ff'> Copilot** In VS Code, the "integrated terminal" is not tied to a specific terminal emulator like GNOME Terminal, but rather to the shell (e.g., bash, zsh) you configure. Installing `gnome-terminal` does not make GNOME Terminal available as an integrated terminal in VS Code. GNOME Terminal is a separate graphical terminal emulator.
+
+*Summary*: You do not get GNOME Terminal inside VS Code. You get your chosen shell (zsh, bash, etc.) in VS Code’s built-in terminal panel. GNOME Terminal is only available as a standalone app outside of VS Code.
+
+#### **<span style='color: #6e7a73'>Upgrade Docker Desktop**
+
+<https://docs.docker.com/desktop/setup/install/linux/ubuntu/#upgrade-docker-desktop>
+
+When a new version for Docker Desktop is released, the Docker UI shows a notification. You need to download the new package each time you want to upgrade Docker Desktop and run: `sudo apt-get install ./docker-desktop-amd64.deb`
+
+#### **<span style='color: #6e7a73'>DockerFile**
+
+`RUN npm install -g pnpm` will not install the *devDependencies* and make the production image much lighter
+
+`COPY --from=development /usr/src/app/dist ./dist`: in this first stage of our docker file, when we run `npm build`, it's going to build our app to the `dist` directory, using the development dependencies. And then we want to take that app and put it into our production stage which doesn't have the development dependencies and plop it in the `dist` folder.
+
+**<span style='color: #8accb3'> Note:** `CMD ["node", "dist/apps/reservations/main"]`, this is the same folder structure as if we had run locally `pnpm run build`, the app would be built into a `dist` folder locally.
+
+`docker build ../../ -f Dockerfile -t sleepr_reservations`
+
+when we try to run our app, we get the below error, and to specify environment variables, we need to use **docker compose**.
+
+![image info](./_notes/2_sc6.png)
+
+```dockerfile
+target: development
+```
+
+if we look at the Docker file, remember we have two different stages. We have the development stage and the production stage. I want to run the image from the development stage here so that we have all of the development dependencies we need when we are actually developing the app.
+
+from *sleepr*, `docker-compose up` which will build and create our container and attach to the running container here. we can test a hot reload by adding any *console.log* to `/apps/reservations/src/main.ts`
+
+#### **<span style='color: #6e7a73'>dockerignore**
+
+To make sure we ignore our disk directory so we're not copying over any pre-built *dist* folder, same for *node_modules*
+
+#### **<span style='color: #6e7a73'>mongo**
+
+currently our dockerized app connects to Mongo Atlas, but instead if we want to create a new Docker image that runs Mongo and then we can connect our running app to that mongo image. We need to go to our *docker-compose* file and add a new service
+
+**<span style='color: #aacb73'> docker-compose.yaml**
+
+```dockerfile
+mongo:
+  image: mongo:latest
+  ports:
+    - '27017:27017'
+```
+
+**<span style='color: #aacb73'> .env**
+
+Instead of pointing to our atlas host, what we need to do is actually change the host name here out for the name of the service, *mongo*, And so with networking in Docker, these containers can talk to each other by the name of the service, with the port 27017
+
+`MONGODB_URI=mongodb://mongo:27017/sleepr`
+
+our nest application starts up and now talks to a mongo image with our dockerized application.
+
+#### **<span style='color: #6e7a73'>restarting docker-compose**
+
+`docker-compose down && docker-compose up`
+
+**<span style='color: #ffcd58'>IMPORTANT:** each time we will shutdown and restart our app, our mongo database will be recreated.
 <!---
 [comment]: it works with text, you can rename it how you want
 
