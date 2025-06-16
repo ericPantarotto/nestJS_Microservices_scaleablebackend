@@ -239,6 +239,20 @@ our nest application starts up and now talks to a mongo image with our dockerize
 `docker-compose down && docker-compose up`
 
 **<span style='color: #ffcd58'>IMPORTANT:** each time we will shutdown and restart our app, our mongo database will be recreated.
+
+## **<span style='color: #6e7a73'>Authentication**
+
+### **<span style='color: #6e7a73'>Users**
+
+`nest g app auth`
+
+`nest g module users`
+
+`nest g controller users`
+
+`nest g service users`
+
+`pnpm start:dev auth`
 <!---
 [comment]: it works with text, you can rename it how you want
 
