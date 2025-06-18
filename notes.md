@@ -253,6 +253,38 @@ our nest application starts up and now talks to a mongo image with our dockerize
 `nest g service users`
 
 `pnpm start:dev auth`
+
+### **<span style='color: #6e7a73'>Local Strategy**
+
+`pnpm i brcypt @types/bcrypt`
+
+**<span style='color: #8accb3'> Note:** Why are we getting access to a user document in our `auth.controller`?
+
+The reason for that is because in our **<span style='color: #aacb73'> local-strategy.ts**,
+in this validate call when we verify the user `verifyUser`, we returned the user. So whatever gets returned from this local strategy in the validate method here gets automatically added to the request object, as the user property.
+
+**<span style='color: #aacb73'> TabButton.jsx**
+`@Res({ passthrough: true }) res: any`: the reason we're going to do this is we're going to actually set the JWT as a cookie on the response object instead of passing as plain text, because I think HTTP cookies are much more secure.
+
+#### **<span style='color: #6e7a73'>bcryptjs**
+
+`pnpm i bcryptjs`
+
+We install an alternative to *bcrypt*, *bcryptjs* as well as make sure we actually have Express installed. we're going to use *bcryptjs* to avoid an issue with mounting our volumes in Docker and *express* to make sure we get the response types we need
+
+#### **<span style='color: #6e7a73'>connecting to Docker Mongo service**
+
+**<span style='color: #ffcd58'>IMPORTANT:**
+
+`docker exec -it sleepr_mongo_1 mongosh` to find the name of the container name: `docker ps`
+
+switch to your correct app: `show dbs`, and then `use sleepr`
+
+`show collections`, `db.userdocuments.find().pretty()`
+
+#### **<span style='color: #6e7a73'>Cookie in our response**
+
+![image info](./_notes/2_sc7.png)
 <!---
 [comment]: it works with text, you can rename it how you want
 
