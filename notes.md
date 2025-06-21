@@ -293,6 +293,8 @@ switch to your correct app: `show dbs`, and then `use sleepr`
 
 And now we need to implement another strategy that actually validates that JWT so that we can use this on all of our other routes where we want to apply authentication to.
 
+`pnpm i cookie-parser`
+
 ## **<span style='color: #6e7a73'>Extra**
 
 ### **<span style='color: #6e7a73'>Debugging**
