@@ -363,6 +363,33 @@ Then we'll also want to add our new port of 9229, so that it's actually exposed 
 }
 ```
 
+### **<span style='color: #6e7a73'>Common Auth Guard**
+
+So we have the ability to apply authentication to our routes directly inside of the `auth` app. however, I want to be able to add authentication to our `reservations` controller so that any of these routes here will be protected by a JWT auth guard and the user must be authenticated to access these routes.
+
+So in order to do this, we need to have a way to connect our microservices together so that the *reservations* can talk to *auth* and authenticate a user.
+
+Nestjs offers this out of the box with a number of different transport options to support networking between our microservices. We're going to use a standard **TCP based transport** layer to be able to connect our microservices together.
+
+`pnpm i @nestjs/microservices`
+
+the logger should display: `auth-1          | [21:38:00.101] INFO (182): Nest microservice successfully started {"context":"NestMicroservice"}`
+
+![image info](./_notes/3_sc1.png)
+
+**<span style='color: #ff3b3b'>Error:** And the error here is that the TCP connection is actually closed and was never actually created between our Reservations app and our auth service. So there's some issue communicating between the two services. **We haven't specified the host and port that we want to be listening on for our TCP microservice**
+
+**<span style='color: #aacb73'> auth/main.ts**
+
+```typescript
+ app.connectMicroservice({
+    transport: Transport.TCP,
+    options: { host: '0.0.0.0', port: 3001 },
+  });
+```
+
+Our hosts property here is going to specify the 0.0.0.0 IP address, which tells the microservice to bind to all interfaces on the host.
+
 <!---
 [comment]: it works with text, you can rename it how you want
 

@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokenPayload } from '../Interfaces/token-paylod.interface';
 import { UsersService } from '../users/users.service';
@@ -14,18 +15,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          if (
-            request &&
-            typeof request.cookies === 'object' &&
-            request.cookies !== null
-          ) {
-            return (
-              (request.cookies as Record<string, string>)['Authentication'] ||
-              null
-            );
-          }
-          return null;
+        (request: any) => {
+          // console.log(request);
+
+          return (
+            request?.cookies?.Authentication ||
+            request?.Authentication ||
+            request?.headers.Authentication
+          );
         },
       ]),
       secretOrKey: configService.get('JWT_SECRET')!,

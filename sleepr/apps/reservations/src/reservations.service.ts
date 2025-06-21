@@ -7,11 +7,12 @@ import { ReservationRepository } from './reservation.repository';
 export class ReservationsService {
   constructor(private readonly reservationRepository: ReservationRepository) {}
 
-  create(createReservationDto: CreateReservationDto) {
+  create(createReservationDto: CreateReservationDto, userId: string) {
     return this.reservationRepository.create({
       ...createReservationDto,
       timestamp: new Date(),
-      userId: 'user-id-placeholder', //HACK: Replace with actual user ID logic
+      // userId: 'user-id-placeholder', //HACK: Replace with actual user ID logic
+      userId,
     });
   }
 
