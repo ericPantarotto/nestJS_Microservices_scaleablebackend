@@ -5,6 +5,7 @@ import { Logger } from 'nestjs-pino';
 import { AuthModule } from './auth.module';
 
 async function bootstrap() {
+  console.log('Starting Auth Service...');
   const app = await NestFactory.create(AuthModule);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useLogger(app.get(Logger));

@@ -29,6 +29,10 @@
 mongoDB VSCode connection string: mongodb+srv://ericpython1980:PASSWORD@cluster0.orqdni8.mongodb.net/
 mongosh: mongosh "mongodb+srv://cluster0.orqdni8.mongodb.net/" --apiVersion 1 --username ericpython1980 --password PASSWORD
 
+### **<span style='color: #6e7a73'>Docker**
+
+systemctl --user start docker-desktop
+
 ## **<span style='color: #6e7a73'>Introduction**
 
 ### **<span style='color: #6e7a73'>System Architecture**
@@ -263,8 +267,7 @@ our nest application starts up and now talks to a mongo image with our dockerize
 The reason for that is because in our **<span style='color: #aacb73'> local-strategy.ts**,
 in this validate call when we verify the user `verifyUser`, we returned the user. So whatever gets returned from this local strategy in the validate method here gets automatically added to the request object, as the user property.
 
-**<span style='color: #aacb73'> TabButton.jsx**
-`@Res({ passthrough: true }) res: any`: the reason we're going to do this is we're going to actually set the JWT as a cookie on the response object instead of passing as plain text, because I think HTTP cookies are much more secure.
+**<span style='color: #aacb73'> TabButton.jsx**: `@Res({ passthrough: true }) res: any`: the reason we're going to do this is we're going to actually set the JWT as a cookie on the response object instead of passing as plain text, because I think HTTP cookies are much more secure.
 
 #### **<span style='color: #6e7a73'>bcryptjs**
 
@@ -285,6 +288,79 @@ switch to your correct app: `show dbs`, and then `use sleepr`
 #### **<span style='color: #6e7a73'>Cookie in our response**
 
 ![image info](./_notes/2_sc7.png)
+
+### **<span style='color: #6e7a73'>Jwt Strategy**
+
+And now we need to implement another strategy that actually validates that JWT so that we can use this on all of our other routes where we want to apply authentication to.
+
+## **<span style='color: #6e7a73'>Extra**
+
+### **<span style='color: #6e7a73'>Debugging**
+
+#### **<span style='color: #6e7a73'>package.json****
+
+And specify an address where we want to listen for debug requests. So in our case I want to go ahead and specify this address. So the IP is going to be **0000**. So that we attach to all network interfaces running. Well in our case we know our app is running inside of a Docker container. So we want to listen on all IP addresses in that container, And we want to specifically then listen on port 9229 which is going to be the debugging port we're going to use.
+
+```json
+"start:debug": "nest start --debug 0.0.0.0:9229 --watch",`
+```
+
+#### **<span style='color: #6e7a73'>docker-compose.yaml**
+
+```yaml
+reservations:
+  command: pnpm run start:debug reservations
+  #...
+  ports:
+  - '3001:3001'
+  - '9229:9229'
+  
+auth:
+  command: pnpm run start:debug auth
+  #...
+  ports:
+  - '3001:3001'
+  - '9230:9229'
+```
+
+Then we'll also want to add our new port of 9229, so that it's actually exposed for traffic on our Docker container and importantly, is mapped to our local machine's port of 9229. So the Docker container is going to map this port that's running in the container to our local machine, so that we can send requests to localhost 9229 and have them forwarded into the actual container, which we know is listening for requests to debug.
+
+#### **<span style='color: #6e7a73'>launch.json**
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug: reservations",
+      "address": "localhost",
+      "port": 9229,
+      "sourceMaps": true,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/sleepr",
+      "remoteRoot": "/usr/src/app",
+      // "protocol": "inspector",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Debug: auth",
+      "address": "localhost",
+      "port": 9230,
+      "sourceMaps": true,
+      "restart": true,
+      "localRoot": "${workspaceFolder}/sleepr",
+      "remoteRoot": "/usr/src/app",
+      // "protocol": "inspector",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
+```
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
