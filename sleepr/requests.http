@@ -1,2 +1,40 @@
-#### Get root
-GET http://localhost:3000/
+### Create a new user
+POST http://192.168.1.30:3001/users/
+Content-Type: application/json
+
+{
+    "email": "abc2@exa2mple.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+###Login with the user
+POST http://192.168.1.30:3001/auth/login
+Content-Type: application/json
+
+{
+    "email": "abc2@exa2mple.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+### Get all reservations
+GET http://192.168.1.30:3000/reservations
+
+### Create a new reservation
+POST http://192.168.1.30:3000/reservations
+Content-Type: application/json
+
+{
+  "startDate": "02-01-2025",
+  "endDate": "02-05-2025",
+  "placeId": "123",
+  "invoiceId": "123",
+  "charge": {
+      "amount": 5.05,
+      "card": {
+          "cvc": "413",
+          "exp_month": 12,
+          "exp_year": 2027,
+          "number": "4242 4242 4242 4242"
+      }
+  }
+}
