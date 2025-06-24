@@ -390,6 +390,25 @@ the logger should display: `auth-1          | [21:38:00.101] INFO (182): Nest mi
 
 Our hosts property here is going to specify the 0.0.0.0 IP address, which tells the microservice to bind to all interfaces on the host.
 
+## **<span style='color: #6e7a73'>Payments**
+
+### **<span style='color: #6e7a73'>Stripe Setup**
+
+`nest g app payments`
+
+copy the `DockerFile` from another app
+
+update `docker-compose.yaml`
+
+#### **<span style='color: #6e7a73'>Stripe**
+
+account: <ericpython1980@gmail.com>
+
+go in the menu, under *Developers*, you will see a publishable key and secret key, that we'll use to interact with the stripe API on the backend.
+
+`pnpm i stripe`
+
+once you have configured the stripe service inside the payment service, restart the docker application to make sure that the `.env` file with the stripe_secret-key was recorded.
 <!---
 [comment]: it works with text, you can rename it how you want
 
