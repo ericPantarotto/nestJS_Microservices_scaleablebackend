@@ -29,12 +29,9 @@ Content-Type: application/json
   "placeId": "123",
   "invoiceId": "123",
   "charge": {
-      "amount": 5.05,
-      "card": {
-          "cvc": "413",
-          "exp_month": 12,
-          "exp_year": 2027,
-          "number": "4242 4242 4242 4242"
-      }
+    "amount": 20.02,
+    "card": {
+      "token": "tok_mastercard_debit"
+    }
   }
 }

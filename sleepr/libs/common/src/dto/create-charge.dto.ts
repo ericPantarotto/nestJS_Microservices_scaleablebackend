@@ -6,7 +6,8 @@ import {
   IsNumber,
   ValidateNested,
 } from 'class-validator';
-import { CardDto } from './card.dto';
+// import { CardDto } from './card.dto';
+import { CardDto } from './cardNew.dto';
 
 export class CreateChargeDto {
   @IsDefined()

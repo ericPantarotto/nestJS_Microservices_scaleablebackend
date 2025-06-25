@@ -1,23 +1,35 @@
+import { PAYMENTS_SERVICE } from '@app/common';
 import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
+import { firstValueFrom } from 'rxjs';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ReservationRepository } from './reservation.repository';
-import { PAYMENTS_SERVICE } from '@app/common';
-import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     private readonly reservationRepository: ReservationRepository,
-    @Inject(PAYMENTS_SERVICE) paymentsService: ClientProxy,
+    @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
   ) {}
 
   async create(createReservationDto: CreateReservationDto, userId: string) {
-    return this.reservationRepository.create({
+    const paymentResponse: unknown = await firstValueFrom(
+      this.paymentsService.send('create_charge', createReservationDto.charge),
+    );
+    // Optionally, assert or cast to the expected type if known, e.g.:
+    // const paymentResponse = await firstValueFrom<PaymentResponseType>(
+    //   this.paymentsService.send('create_charge', createReservationDto.charge),
+    // );
+    console.log('Payment response:', paymentResponse);
+
+    const reservation = {
       ...createReservationDto,
       timestamp: new Date(),
       userId,
-    });
+      invoiceId: (paymentResponse as { id: string })['id'],
+    };
+    return this.reservationRepository.create(reservation);
   }
 
   async findAll() {

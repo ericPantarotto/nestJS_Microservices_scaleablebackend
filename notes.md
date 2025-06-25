@@ -409,6 +409,10 @@ go in the menu, under *Developers*, you will see a publishable key and secret ke
 `pnpm i stripe`
 
 once you have configured the stripe service inside the payment service, restart the docker application to make sure that the `.env` file with the stripe_secret-key was recorded.
+
+### **<span style='color: #6e7a73'>Reservations Payments - Part 2**
+
+**<span style='color: #ffc5a6'>Stripe Payment Methods:** <https://docs.stripe.com/testing?testing-method=tokens>
 <!---
 [comment]: it works with text, you can rename it how you want
 
