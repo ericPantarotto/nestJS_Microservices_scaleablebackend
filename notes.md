@@ -423,6 +423,21 @@ once you have configured the stripe service inside the payment service, restart 
 **<span style='color: #aacb73'> docker-compose.yaml**
 
 We don't need to expose any ports for both the *payments* and *notifications* services because this is only exposed over TCP.
+
+### **<span style='color: #6e7a73'>Email Notification**
+
+`pnpm i nodemailer`, `pnpm i -D @types/nodemailer`
+
+#### **<span style='color: #6e7a73'>Google console**
+
+<https://console.cloud.google.com/>
+
+Select a Project / New Project
+
+Select the created project / API & Services Section / OAuth Consent screen
+
+Under the *authorized redirect Uris* section, click add Uri and then paste <https://developers.google.com/oauthplayground>, which is the OAuth playground for Developers.google.com, which is what we're going to use to obtain a refresh token with this OAuth application we're creating.
+
 <!---
 [comment]: it works with text, you can rename it how you want
 

@@ -29,9 +29,28 @@ Content-Type: application/json
   "placeId": "123",
   "invoiceId": "123",
   "charge": {
-    "amount": 20.02,
+    "amount": 20.03,
     "card": {
       "token": "tok_mastercard_debit"
     }
   }
+}
+
+
+### Create a new user - NOTIFICATIONS
+POST http://192.168.1.30:3001/users/
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+###Login with the user
+POST http://192.168.1.30:3001/auth/login
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
 }
