@@ -413,6 +413,16 @@ once you have configured the stripe service inside the payment service, restart 
 ### **<span style='color: #6e7a73'>Reservations Payments - Part 2**
 
 **<span style='color: #ffc5a6'>Stripe Payment Methods:** <https://docs.stripe.com/testing?testing-method=tokens>
+
+## **<span style='color: #6e7a73'>Notifications**
+
+### **<span style='color: #6e7a73'>Emit Notification**
+
+`nest g app notifications`
+
+**<span style='color: #aacb73'> docker-compose.yaml**
+
+We don't need to expose any ports for both the *payments* and *notifications* services because this is only exposed over TCP.
 <!---
 [comment]: it works with text, you can rename it how you want
 
