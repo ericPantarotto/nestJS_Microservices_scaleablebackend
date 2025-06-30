@@ -1,13 +1,12 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { UserDocument } from '../../../../apps/auth/src/users/models/user.schema';
-
-import { Request } from 'express';
+import { UserDocument } from '../models/user.schema';
 
 const getCurrentUserByContext = (context: ExecutionContext): UserDocument => {
-  const request = context.switchToHttp().getRequest<Request>();
-  return request.user as UserDocument;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+  return context.switchToHttp().getRequest().user;
 };
 
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext) => getCurrentUserByContext(ctx),
+  (_data: unknown, context: ExecutionContext) =>
+    getCurrentUserByContext(context),
 );

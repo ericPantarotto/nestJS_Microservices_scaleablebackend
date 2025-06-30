@@ -4,11 +4,15 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
+COPY tsconfig.json tsconfig.json
 
 RUN npm install -g pnpm && \
-  pnpm install --frozen-lockfile
+  pnpm install
 
-COPY  . .
+COPY  apps/notifications apps/notifications
+COPY libs libs
+
+RUN cd apps/notifications && pnpm install --no-frozen-lockfile
 
 RUN pnpm run build
 
