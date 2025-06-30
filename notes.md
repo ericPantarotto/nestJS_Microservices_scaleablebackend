@@ -456,8 +456,37 @@ Under the *authorized redirect Uris* section, click add Uri and then paste <http
 - click on *reservations* repository, *copy path*
 - `docker tag reservations europe-west1-docker.pkg.dev/sleepr-464121/reservations/production`
 - `docker image push europe-west1-docker.pkg.dev/sleepr-464121/reservations/production`
+- repeat the above steps (build, tag, image push) for the 3 other microservices
 
 ![image info](./_notes/5_sc1.png)
+
+### **<span style='color: #6e7a73'>Productionize & Push Dockerfile**
+
+![image info](./_notes/5_sc2.png)
+
+If we go into the *current-user.decorator.ts*, we're trying to import code that lives in a different microservice, the *auth* microservice.
+
+We definitely don't want to be importing from this microservice directly because that means we're going to have to couple all of these services together. We want to keep them nice and separated.
+
+#### **<span style='color: #6e7a73'>package.json**
+
+**<span style='color: #8accb3'> Note:** having each microservice with its own `package.json` to avoid importing packages that are not used in a given microservice
+
+- `cd apps/auth`
+- `pnpm init`
+- move the dependencies from the main `package.json` that only *auth* is using
+- to install the dependencies specified in the auth package.json:
+  - **<span style='color: #aacb73'> apps/auth/Dockerfile**
+
+```yml
+RUN cd apps/auth && \
+pnpm install --no-frozen-lockfile
+```
+
+- for all microservices, we can repeat the same process
+- we then build, tag, and push to *GCloud*
+
+**<span style='color: #8accb3'> Note:** Now that we have all of our images and our Docker file is productionized, let's go ahead and see how we can actually start deploying this on machines.
 
 <!---
 [comment]: it works with text, you can rename it how you want
