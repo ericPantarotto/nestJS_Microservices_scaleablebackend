@@ -438,6 +438,27 @@ Select the created project / API & Services Section / OAuth Consent screen
 
 Under the *authorized redirect Uris* section, click add Uri and then paste <https://developers.google.com/oauthplayground>, which is the OAuth playground for Developers.google.com, which is what we're going to use to obtain a refresh token with this OAuth application we're creating.
 
+## **<span style='color: #6e7a73'>Production Deployment**
+
+### **<span style='color: #6e7a73'>Google Cloud Engine Setup**
+
+- Container Registry
+- Artifact Registry
+- Create Repository
+  - reservations, auth, payments, notifications
+- on one of the repository, *setup instructions / google cloud sdk link*
+  - quickstart to install the google cloud cli: <https://cloud.google.com/sdk/docs/install-sdk?authuser=1#deb>
+  - <https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login>
+    - once our login is successful, `gcloud artifacts repositories list` should list our repositories
+  - `gcloud auth configure-docker \
+    europe-west1-docker.pkg.dev` to configure docker locally to use *GCloud* to authenticate when pushing or pulling our images
+- from **<span style='color: #aacb73'> sleepr folder**, `docker build -t reservations -f apps/reservations/Dockerfile .`
+- click on *reservations* repository, *copy path*
+- `docker tag reservations europe-west1-docker.pkg.dev/sleepr-464121/reservations/production`
+- `docker image push europe-west1-docker.pkg.dev/sleepr-464121/reservations/production`
+
+![image info](./_notes/5_sc1.png)
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
