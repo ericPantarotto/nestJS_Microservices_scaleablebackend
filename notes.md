@@ -488,6 +488,29 @@ pnpm install --no-frozen-lockfile
 
 **<span style='color: #8accb3'> Note:** Now that we have all of our images and our Docker file is productionized, let's go ahead and see how we can actually start deploying this on machines.
 
+### **<span style='color: #6e7a73'>Automated CI/CD With CloudBuild**
+
+update all the Docker files now to explicitly build the application that we are in.
+
+```yml
+RUN pnpm run build auth
+```
+
+it's getting really cumbersome to have to keep manually:
+
+- rebuilding,
+- tagging
+- and pushing each and every one of our images manually
+
+So we can actually use *Gcloud* to set up a **CI CD pipeline** and make our build and deployment process completely automated so that we have new images that get built, every time we push a commit to our repository.
+
+#### **<span style='color: #6e7a73'>GCloud CI/CD**
+
+`- name: 'gcr.io/cloud-builders/docker'` is a pre-built container that allows us to build, tag and push Docker images directly in Google Cloud build.
+
+Enable Cloud Build API
+
+this command will use the *Google Cloud Build API* / Create Trigger
 <!---
 [comment]: it works with text, you can rename it how you want
 
