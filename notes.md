@@ -443,7 +443,7 @@ Under the *authorized redirect Uris* section, click add Uri and then paste <http
 ### **<span style='color: #6e7a73'>Google Cloud Engine Setup**
 
 - Container Registry
-- Artifact Registry
+- **<span style='color: #ffc5a6'>Artifact Registry:** <https://console.cloud.google.com/artifacts?authuser=1>
 - Create Repository
   - reservations, auth, payments, notifications
 - on one of the repository, *setup instructions / google cloud sdk link*
@@ -511,6 +511,8 @@ So we can actually use *Gcloud* to set up a **CI CD pipeline** and make our buil
 Enable Cloud Build API
 
 this command will use the *Google Cloud Build API* / Create Trigger
+
+**<span style='color: #ffc5a6'>Build Dashboard:** <https://console.cloud.google.com/cloud-build/dashboard?authuser=1>
 <!---
 [comment]: it works with text, you can rename it how you want
 
