@@ -575,6 +575,26 @@ Click on the created service account, Keys / Add Key / Create new Key
 repeat `kubectl create deployment payments --image=europe-west1-docker.pkg.dev/sleepr-464121/payments/production --dry-run=client -o yaml > deployment.yaml` steps for all microservices
 
 **upgrade the helm installation**:  **<span style='color: #aacb73'> k8s/sleepr/** `helm upgrade sleepr .`
+
+### **<span style='color: #6e7a73'>MongoDB Atlas**
+
+Security / Network Access / `0.0.0.0`, to authorize all IPs
+
+#### **<span style='color: #6e7a73'>Kubernetes Secret**
+
+We don't want to paste our connection string directly in to a file that we can commit because that means we're going to be committing plain text secrets, meaning our MongoDB username and password, which is a bad practice.
+
+So Kubernetes offers a way around this using a concept known as a secret.
+
+So we're going to go ahead and create a secret which is just going to be inside of this cluster and it will be base 64 encoded.
+
+`kubectl create secret generic mongodb --from-literal=connectionString=mongodb+srv://ericpython1980:PASSWORD_TO_UPDATE@cluster0.orqdni8.mongodb.net/`  
+`kubectl get secret`  
+`kubectl get secret mongodb -o yaml`  
+`helm upgrade sleeper .`  
+`kubectl logs reservations-6665f6d4f5-2q6k5`; the *Joi* warning for MONGODB_URI has disappeared  
+`kubectl describe pods reservations-6665f6d4f5-2q6k5` will display: Environment: MONGODB_URI:  <set to the key 'connectionString' in secret 'mongodb'>  Optional: false
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
