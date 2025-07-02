@@ -513,6 +513,68 @@ Enable Cloud Build API
 this command will use the *Google Cloud Build API* / Create Trigger
 
 **<span style='color: #ffc5a6'>Build Dashboard:** <https://console.cloud.google.com/cloud-build/dashboard?authuser=1>
+
+### **<span style='color: #6e7a73'>Helm Chart**
+
+So if you use Docker desktop, you should be able to go into the settings and see a Kubernetes field here where you can enable a Kubernetes cluster on Docker desktop to make it very easy to get started with Kubernetes back in the command line.
+
+You can see if I run `kubectl get namespaces`, I have the default namespaces for Kubernetes cluster and if I run `kubectl get pods`, I have nothing running in my default namespace right now. So let's go ahead and change that by starting to create our first deployment.
+
+#### **<span style='color: #6e7a73'>Helm installation**
+
+**<span style='color: #ffc5a6'>github helm:** <https://github.com/helm/helm/releases>  
+**<span style='color: #ffc5a6'>helm ubuntu install:** <https://helm.sh/docs/intro/install/>
+
+`curl -O https://get.helm.sh/helm-v3.18.3-linux-amd64.tar.gz`  
+`tar -zxvf helm-v3.18.3-linux-amd64.tar.gz`  
+`sudo mv linux-amd64/helm /usr/local/bin/helm`  
+`rm helm-v3.18.3-linux-amd64.tar.gz`  
+`rm -rf linux-amd64`  
+`helm version`
+
+#### **<span style='color: #6e7a73'>Helm - Kubernetes deployments & manifests**
+
+`mkdir k8s`, `helm create sleepr`, to create a new helm chart called *sleeper*. And what this is going to do is it's going to create some starter files for Sleeper here and give us some starting templates as well as an all important chart YAML file which defines our application and all the dependencies for this chart
+
+**<span style='color: #ffcd58'>IMPORTANT:** So the next thing we want to do is actually create deployments for each of our services. Deployments are what's going to define the manifest for each of our microservices and make sure we always have a pod running for each one of these apps.
+
+`kubectl create deployment reservations --image=europe-west1-docker.pkg.dev/sleepr-464121/reservations/production --dry-run=client -o yaml > deployment.yaml`
+
+we're going to set this flag called `--dry-run` equal to *client* here to make sure that we don't actually execute this, but we want to actually output this to YAML so that we can source control and commit it as part of our helm chart and make sure it's always going to be run when we do helm install. So let's go ahead and add dry run equal client and then we'll add output equal to YAML here and pipe this to a file called deployment dot yaml.
+
+`cd sleepr`, `helm install sleepr .`: `.` is the path of the *chart.yaml*
+
+![image info](./_notes/5_sc3.png)
+
+`kubectl describe pods`
+
+**<span style='color: #ff3b3b'>Error:** Failed to pull image "europe-west1-docker.pkg.dev/sleepr-464121/reservations/production": Error response from daemon: failed to resolve reference "europe-west1-docker.pkg.dev/sleepr-464121/reservations/production:latest": failed to do request: Head "<https://europe-west1-docker.pkg.dev/v2/sleepr-464121/reservations/production/manifests/latest>": dialing europe-west1-docker.pkg.dev:443 container via direct connection because disabled has no HTTPS proxy: connecting to europe-west1-docker.pkg.dev:443: dial tcp: lookup europe-west1-docker.pkg.dev on 127.0.0.53:53: server misbehaving
+
+So remember that out of the box that our artifact registry is completely private, which means that people can't pull our images without correct access. And that means even on our local Kubernetes cluster, we need a way to configure access to these images, just like we did for local Docker, when we were pushing and pulling
+
+GCloud / API & Services / Credentials / Create Credentials / Service Account / Artifact Registry Reader
+
+Click on the created service account, Keys / Add Key / Create new Key
+
+`kubectl create secret docker-registry gcr-json-key --docker-server=europe-west1-docker.pkg.dev --docker-username=_json_key --docker-password="$(cat ./sleepr-464121-dd97b79a42a3.json)" --docker-email=<ericpython1980@gmail.com>`
+
+`kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'`  
+`kubectl rollout restart deployment reservations`  
+`kubectl get pods`
+
+![image info](./_notes/5_sc4.png)
+
+`kubectl logs reservations-65b75c6666-kp6mq`
+
+![image info](./_notes/5_sc5.png)
+
+**<span style='color: #ff3b3b'>Error:** If we run kubectl logs and paste the pod name in, we can see that the startup failed because we're not supplying the pod with the correct environment variables, **which is what we expect to see because our validation is working correctly**.
+
+#### **<span style='color: #6e7a73'>Helm - Kubernetes deployments for all other microservices**
+
+repeat `kubectl create deployment payments --image=europe-west1-docker.pkg.dev/sleepr-464121/payments/production --dry-run=client -o yaml > deployment.yaml` steps for all microservices
+
+**upgrade the helm installation**:  **<span style='color: #aacb73'> k8s/sleepr/** `helm upgrade sleepr .`
 <!---
 [comment]: it works with text, you can rename it how you want
 

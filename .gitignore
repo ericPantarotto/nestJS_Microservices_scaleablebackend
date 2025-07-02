@@ -64,3 +64,6 @@ dist/
 
 # sqlite
 *.sqlite
+
+# gcloud json keys
+sleepr-464121-dd97b79a42a3.json
