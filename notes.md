@@ -595,6 +595,24 @@ So we're going to go ahead and create a secret which is just going to be inside 
 `kubectl logs reservations-6665f6d4f5-2q6k5`; the *Joi* warning for MONGODB_URI has disappeared  
 `kubectl describe pods reservations-6665f6d4f5-2q6k5` will display: Environment: MONGODB_URI:  <set to the key 'connectionString' in secret 'mongodb'>  Optional: false
 
+### **<span style='color: #6e7a73'> Kubernetes Services & Env Variables - Part 1**
+
+`kubectl create secret generic google --from-literal=clientSecret=GOCSPX-XXX --from-literal=refreshToken=1//XXX`
+
+So next we want to create a service for our notifications deployment so that our other pods can easily talk to it in our Kubernetes cluster in a reliable way.
+
+**<span style='color: #aacb73'> k8s/sleepr/templates/notifications**: `kubectl create service clusterip notifications --tcp=3000 --dry-run=client -o yaml > service.yaml`
+
+`kubectl get svc`
+
+![image info](./_notes/5_sc6.png)
+
+`kubectl create secret generic stripe --from-literal=apiKey=sk_test_XXX`
+
+`kubectl create service clusterip payments --tcp=3001 --dry-run=client -o yaml > services.yaml`
+
+`kubectl create service clusterip auth --tcp=3002,3003 --dry-run=client -o yaml > services.yaml`
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
