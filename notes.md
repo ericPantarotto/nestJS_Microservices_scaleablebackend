@@ -613,6 +613,51 @@ So next we want to create a service for our notifications deployment so that our
 
 `kubectl create service clusterip auth --tcp=3002,3003 --dry-run=client -o yaml > services.yaml`
 
+### **<span style='color: #6e7a73'> Kubernetes Services & Env Variables - Part 2**
+
+our last step is to create a service for reservations. And this is the most important one because it's going to be what our users are going to use to actually enter our system and make calls to create reservations and trigger our whole application. **In this sense, it's acting like the API gateway and this service is what we're going to need to actually expose externally**.
+
+- when we run this service in Google Cloud, we're actually going to provision a load balancer.
+- However, when we're running locally, we just want to configure it as a node port service so that we can communicate it via *localhost*.
+
+**<span style='color: #8accb3'> Note:** So one last improvement we're going to make to make our services a bit cleaner is to actually update the name. So if it's a microservice, we'll leave the name as *TCP*. Otherwise we'll call the name *Http*.
+
+upgrade the manifest `helm upgrade sleepr .`, `kubectl get svc`
+
+we can see we have a new reservation service created on a node port and it will be on exposed externally at this port *32666*, which means we can actually communicate with this service using local host.
+
+![image info](./_notes/5_sc7.png)
+
+back in Postman, we can now actually communicate with our cluster and entering in the node port that you just found on the reservation service. *<http://localhost:32666/reservations> - POST* returns 403 Forbidden as we are not authenticated in our *auth* service.
+
+we now need to have a node port set up for our *authentication* service, to communicate with it.
+
+- split into 2 `services-http.yaml, services-tcp.yaml`, both should target `selector: auth`, but one is of type `NodePort`, and the other of type `ClusterIP`
+- as we changed the service name, we also need to change the services that rely on `auth`, which is only `reservations`
+**<span style='color: #aacb73'> templates/reservations/deployment.yaml**
+
+```yml
+- name: AUTH_HOST
+  value: 'auth-tcp'
+```
+
+- `helm upgrade sleepr .`
+
+![image info](./_notes/5_sc8.png)
+
+- So lastly, we need to provide the environment variables that are used in the notification service to actually email users, all of our Google OAuth information.
+
+#### **<span style='color: #6e7a73'> Kubernetes Notification service**
+
+if sending the email was failing, we would need to refresh the token,
+
+![image info](./_notes/5_sc9.png)
+
+and paste the base64 refresh token with the new value.
+
+to get the latest notifications pod with the new secret, `kubectl rollout restart deployment notifications`
+
+**<span style='color: #8accb3'> Note:** we have our application working end to end locally running in a Kubernetes cluster. Let's go ahead and see how we can easily deploy this to Google Cloud.
 <!---
 [comment]: it works with text, you can rename it how you want
 

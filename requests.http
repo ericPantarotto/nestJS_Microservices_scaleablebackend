@@ -54,3 +54,42 @@ Content-Type: application/json
     "email": "eric.carlier@gmail.com",
     "password": "PasswordEcr2025!a@"
 }
+
+## KUBERNETES CLUSTER 
+### K8S - Create a new user - NOTIFICATIONS
+POST http://localhost:31719/users/
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+### K8S - Login with the user
+POST http://192.168.1.30:31719/auth/login
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+### K8S - Create a new reservation
+POST http://192.168.1.30:32666/reservations
+Content-Type: application/json
+
+{
+  "startDate": "02-01-2025",
+  "endDate": "02-05-2025",
+  "placeId": "123",
+  "invoiceId": "123",
+  "charge": {
+    "amount": 20.03,
+    "card": {
+      "token": "tok_mastercard_debit"
+    }
+  }
+}
+
+### K8S - Get all reservations
+GET http://192.168.1.30:32666/reservations
