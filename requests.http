@@ -55,6 +55,11 @@ Content-Type: application/json
     "password": "PasswordEcr2025!a@"
 }
 
+### Check health of the service RESERVATIONS
+GET http://192.168.1.30:3000/
+### Check health of the service AUTH
+GET http://192.168.1.30:3001/
+
 ## KUBERNETES CLUSTER 
 ### K8S - Create a new user - NOTIFICATIONS
 POST http://localhost:31719/users/
@@ -93,3 +98,8 @@ Content-Type: application/json
 
 ### K8S - Get all reservations
 GET http://192.168.1.30:32666/reservations
+
+### K8S - Check health of the service RESERVATIONS
+GET http://192.168.1.30:32666/
+### K8S - Check health of the service AUTH
+GET http://192.168.1.30:31719/

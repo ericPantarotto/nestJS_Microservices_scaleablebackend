@@ -658,6 +658,22 @@ and paste the base64 refresh token with the new value.
 to get the latest notifications pod with the new secret, `kubectl rollout restart deployment notifications`
 
 **<span style='color: #8accb3'> Note:** we have our application working end to end locally running in a Kubernetes cluster. Let's go ahead and see how we can easily deploy this to Google Cloud.
+
+### **<span style='color: #6e7a73'> Health Check**
+
+By default, Kubernetes engine will launch health check endpoints at the root path of each ingress resource.
+
+to make sure that the load balancer is healthy, so in order to make sure that it's reported as healthy and our application is actually routed to, we're going to go ahead and create a new route in both the `reservations` and `auth` services to respond to this health check.
+
+**<span style='color: #f3b4ff'> Copilot** to restart one pod, and pulling the latest image (on GCloud for instance)
+
+`kubectl rollout restart deployment reservations`
+
+To restart all pods, in a give namespace:
+
+- `kubectl get pods --all-namespaces`
+- `kubectl rollout restart deployment -n default`
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
@@ -684,5 +700,6 @@ to get the latest notifications pod with the new secret, `kubectl rollout restar
 -->
 
 <!-- markdownlint-enable MD033 -->
+<!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
