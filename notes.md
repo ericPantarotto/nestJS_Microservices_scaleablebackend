@@ -428,6 +428,8 @@ We don't need to expose any ports for both the *payments* and *notifications* se
 
 `pnpm i nodemailer`, `pnpm i -D @types/nodemailer`
 
+Settings / Use your own OAuth credentials / enter your credentials / Gmail API v1 / Authorize APIs
+
 #### **<span style='color: #6e7a73'>Google console**
 
 <https://console.cloud.google.com/>
@@ -591,7 +593,7 @@ So we're going to go ahead and create a secret which is just going to be inside 
 `kubectl create secret generic mongodb --from-literal=connectionString=mongodb+srv://ericpython1980:PASSWORD_TO_UPDATE@cluster0.orqdni8.mongodb.net/`  
 `kubectl get secret`  
 `kubectl get secret mongodb -o yaml`  
-`helm upgrade sleeper .`  
+`helm upgrade sleepr .`  
 `kubectl logs reservations-6665f6d4f5-2q6k5`; the *Joi* warning for MONGODB_URI has disappeared  
 `kubectl describe pods reservations-6665f6d4f5-2q6k5` will display: Environment: MONGODB_URI:  <set to the key 'connectionString' in secret 'mongodb'>  Optional: false
 
@@ -653,6 +655,8 @@ if sending the email was failing, we would need to refresh the token,
 
 ![image info](./_notes/5_sc9.png)
 
+`echo -n "1//04PCtYMakmEt4CgYIARAAGAQSNwF-XXX" | base64`
+
 and paste the base64 refresh token with the new value.
 
 to get the latest notifications pod with the new secret, `kubectl rollout restart deployment notifications`
@@ -674,6 +678,65 @@ To restart all pods, in a give namespace:
 - `kubectl get pods --all-namespaces`
 - `kubectl rollout restart deployment -n default`
 
+## **<span style='color: #6e7a73'> Google Cloud**
+
+### **<span style='color: #6e7a73'> Google Kubernetes Engine**
+
+Some of the most important options here are in the automation view where you can see we have *vertical pod auto scaling* and *node auto provisioning* automatically enabled.
+
+And what this means is that when we deploy our application, it will automatically scale to meet the demand of what's hitting the system based on the CPU and memory usage of our pods. Google Kubernetes Engine will be taking care of all of this behind the scenes.
+
+#### **<span style='color: #6e7a73'> connecting to this Kubernetes cluster on the Kubectl**
+
+Click on your created cluster / *Connect Menu* / Command Line
+
+**<span style='color: #ffc5a6'>Configure cluster access:** <https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl#install_plugin>
+
+`sudo   apt-get install google-cloud-sdk-gke-gcloud-auth-plugin`
+
+`gcloud container clusters get-credentials sleepr --region europe-west1 --project sleepr-464121`
+
+`kubectl get namespaces` to check we are connecting correctly
+
+`kubectl get pods -n kube-system`: we can see all the different components of the Google Cloud engine Kube system here, including a kube DNS and some networking pods.
+
+#### **<span style='color: #6e7a73'> project k8s setup**
+
+**<span style='color: #aacb73'> /k8s/sleepr** `helm install sleepr .`
+
+`kubectl get nodes`, `kubectl get pods`
+
+all our pods will be in `CreateContainerConfigError` state as we have not configured our secrets
+
+#### **<span style='color: #6e7a73'> transferring secrets from local to GCloud Kubernetes cluster**
+
+- `kubectl config get-contexts`
+- `kubectl config use-context docker-desktop`
+- `kubectl get secrets`
+- creating some temporary files so that we can create and transfer these secrets
+  - `kubectl get secret stripe -o yaml > stripe.yaml`
+  - `kubectl get secret mongodb -o yaml > mongodb.yaml`
+  - `kubectl get secret jwt -o yaml > jwt.yaml`
+  - `kubectl get secret google -o yaml > google.yaml`
+  - We won't have to do the secret for our `gcr-json-key` because in our Kubernetes engine cluster we don't need to explicitly define credentials. We already authenticated to pull images from artifact registry because we're inside of Google Cloud engine.
+- `kubectl config use-context gke_sleepr-464121_europe-west1_sleepr`
+  - `kubectl create -f google.yaml`
+  - `kubectl create -f mongodb.yaml`
+  - `kubectl create -f jwt.yaml`
+  - `kubectl create -f stripe.yaml`
+- our `kubectl get pods` should return that all microservices are now running
+
+### **<span style='color: #6e7a73'>Ingress Load Balancer**
+
+Right now we have two node ports set up to expose our external services. However, we want to actually create a new ingress resource because behind the scenes, Google Kubernetes engine will automatically provision us a load balancer and give us a single IP address that we can use to make requests to our entire application, which is what we want to do.
+
+we add a new `templates`: `ingress.yaml` and then `helm upgrade sleepr .`, in case there were no actual changes in the Helm deployment, it is better to restart all pods `kubectl rollout restart deployment -n default`
+
+![image info](./_notes/7_sc1.png)
+
+`kubectl get ingress`
+
+![image info](./_notes/7_sc2.png)
 <!---
 [comment]: it works with text, you can rename it how you want
 

@@ -60,7 +60,7 @@ GET http://192.168.1.30:3000/
 ### Check health of the service AUTH
 GET http://192.168.1.30:3001/
 
-## KUBERNETES CLUSTER 
+## KUBERNETES CLUSTER - LOCAL
 ### K8S - Create a new user - NOTIFICATIONS
 POST http://localhost:31719/users/
 Content-Type: application/json
@@ -103,3 +103,46 @@ GET http://192.168.1.30:32666/reservations
 GET http://192.168.1.30:32666/
 ### K8S - Check health of the service AUTH
 GET http://192.168.1.30:31719/
+
+
+# --------------
+## KUBERNETES CLUSTER - GCLOUD
+### K8S - Create a new user - NOTIFICATIONS
+POST http://34.36.133.3/users/
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+### K8S - Login with the user
+POST http://34.36.133.3/auth/login
+Content-Type: application/json
+
+{
+    "email": "eric.carlier@gmail.com",
+    "password": "PasswordEcr2025!a@"
+}
+
+### K8S - Create a new reservation
+POST http://34.36.133.3/reservations/
+Content-Type: application/json
+
+{
+  "startDate": "07-08-2025",
+  "endDate": "07-12-2025",
+  "placeId": "123",
+  "invoiceId": "123",
+  "charge": {
+    "amount": 70.02,
+    "card": {
+      "token": "tok_mastercard_debit"
+    }
+  }
+}
+
+### K8S - Get all reservations
+GET http://34.36.133.3/reservations/
+
+
