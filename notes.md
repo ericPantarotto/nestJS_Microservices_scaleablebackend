@@ -428,6 +428,8 @@ We don't need to expose any ports for both the *payments* and *notifications* se
 
 `pnpm i nodemailer`, `pnpm i -D @types/nodemailer`
 
+Settings / Use your own OAuth credentials / enter your credentials / Gmail API v1 / Authorize APIs
+
 #### **<span style='color: #6e7a73'>Google console**
 
 <https://console.cloud.google.com/>
@@ -653,6 +655,8 @@ if sending the email was failing, we would need to refresh the token,
 
 ![image info](./_notes/5_sc9.png)
 
+`echo -n "1//04PCtYMakmEt4CgYIARAAGAQSNwF-XXX" | base64`
+
 and paste the base64 refresh token with the new value.
 
 to get the latest notifications pod with the new secret, `kubectl rollout restart deployment notifications`
@@ -721,6 +725,18 @@ all our pods will be in `CreateContainerConfigError` state as we have not config
   - `kubectl create -f jwt.yaml`
   - `kubectl create -f stripe.yaml`
 - our `kubectl get pods` should return that all microservices are now running
+
+### **<span style='color: #6e7a73'>Ingress Load Balancer**
+
+Right now we have two node ports set up to expose our external services. However, we want to actually create a new ingress resource because behind the scenes, Google Kubernetes engine will automatically provision us a load balancer and give us a single IP address that we can use to make requests to our entire application, which is what we want to do.
+
+we add a new `templates`: `ingress.yaml` and then `helm upgrade sleepr .`, in case there were no actual changes in the Helm deployment, it is better to restart all pods `kubectl rollout restart deployment -n default`
+
+![image info](./_notes/7_sc1.png)
+
+`kubectl get ingress`
+
+![image info](./_notes/7_sc2.png)
 <!---
 [comment]: it works with text, you can rename it how you want
 
