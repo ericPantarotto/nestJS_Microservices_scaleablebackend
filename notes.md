@@ -763,8 +763,101 @@ we add a new `templates`: `ingress.yaml` and then `helm upgrade sleepr .`, in ca
   - `docker push 135808955271.dkr.ecr.eu-west-3.amazonaws.com/reservations:latest`
 - buildspec.yaml
 - AWS / CodePipeline
-  - Connect Github
-  - IAM / Roles / Add EC2InstanceProfileForImageBuilderECRContainerBuilds to the build role
+  - Connect Github, make sure that on your pipeline, **you get a confirmation that your github account is well connected**
+  - Optional: IAM / Roles / Add EC2InstanceProfileForImageBuilderECRContainerBuilds to the build role
+
+### **<span style='color: #6e7a73'>Amazon Elastic Kubernetes Service (EKS)**
+
+**<span style='color: #ffc5a6'>EKS cli:** <https://eksctl.io/>
+
+`eksctl get clusters`
+
+#### **<span style='color: #6e7a73'>create EKS cluster**
+
+- `eksctl create cluster -f ./cluster.yaml`
+  - **<span style='color: #8accb3'> Note:** this will create the cluster that can be found under **Elastic Kubernetes Service**
+- `kubectl config get-contexts`
+- `kubectl get nodes`
+- `eksctl get clusters --region eu-west-3`
+- `eksctl get nodegroups --cluster sleepr2 --region eu-west-3`
+
+#### **<span style='color: #6e7a73'>Install Helm Chart into our EKS cluster**
+
+Firstly, we need to make an update to our helm chart to point our images at our repository. Copy the name of the `reservation` image from the `buildspec.yaml` file.
+
+For all services, swap the GCloud image name for the AWS Image name
+
+```yml
+containers:
+  # - image: europe-west1-docker.pkg.dev/sleepr-464121/reservations/production
+  - image: 135808955271.dkr.ecr.eu-west-3.amazonaws.com/reservations:latest
+```
+
+Copying the secrets:
+
+- `kubectl config use-context docker-desktop`
+- `kubectl get secrets`
+- `kubectl get secrets -o yaml > secret.yaml`
+  - remove the `gcr-json-key` entire section
+- `kubectl config use-context iam-root-account@sleepr2.eu-west-3.eksctl.io`
+- `kubectl create -f ./secret.yaml`
+- delete the `secret.yaml` to avoid exposing our secrets
+- `helm install sleepr .`
+  - if you get **<span style='color: #ff3b3b'>Error:** Error: INSTALLATION FAILED: cannot re-use a name that is still in use
+  - check that this release already exists: `helm list -A`
+  - `helm uninstall sleepr`
+  - `helm install sleepr .`
+  - `kubectl get pods`
+
+**<span style='color: #ff3b3b'>Error:** Too many pods:
+
+- `eksctl scale nodegroup ng-1 -n 5 --cluster sleepr`
+- also increase the `maxSize`: `eksctl scale nodegroup ng-1 -M 5 --cluster sleepr`
+
+#### **<span style='color: #6e7a73'>Load Balancer**
+
+**<span style='color: #ffcd58'>IMPORTANT:** let's look at how we can provision a load balancer to expose an externally available URL that won't change.
+
+- **<span style='color: #ffc5a6'>Link:** <https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html>
+- **<span style='color: #ffc5a6'>Link:** <https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/>
+- **<span style='color: #ffc5a6'>Link:** <https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/deploy/installation/>
+
+- `eksctl utils associate-iam-oidc-provider --region eu-west-3 --cluster sleepr2 --approve`
+- `curl -o iam-policy.json <https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.13.3/docs/install/iam_policy.json>`
+- `aws iam create-policy --policy-name AWSLoadBalancerControllerIAMPolicy --policy-document file://iam-policy.json`
+
+- get your account Id from AWS / IAM / Account Id
+
+```bash
+eksctl create iamserviceaccount \
+--cluster=sleepr2 \
+--namespace=kube-system \
+--name=aws-load-balancer-controller \
+--attach-policy-arn=arn:aws:iam::135808955271:policy/AWSLoadBalancerControllerIAMPolicy \
+--override-existing-serviceaccounts \
+--region eu-west-3 \
+--approve
+```
+
+- `cd k8s/sleepr`
+- `helm repo add eks https://aws.github.io/eks-charts`
+- `helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=sleepr2 --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller`
+- `kubectl get pods -n kube-system`, we can see 2 load balancer controller pods running
+
+![image info](./_notes/8_sc2.png)
+
+- `kubectl logs aws-load-balancer-controller-5fc85bc7c5-274vg -n kube-system`
+- delete *iam-policy.json*
+- update `ingress.yaml`, to make sure that this load balancer is attached to a public subnet, that is externally facing, and class `alb` makes sure to provision an application load balancer
+- `helm upgrade sleepr .`
+- `kubectl get ing`
+
+![image info](./_notes/8_sc3.png)
+
+- you can check the load balancer status, via AWS / Load Balancer, which should be *active*
+- copy the DNS name <k8s-default-sleepr-5502194e56-627965032.eu-west-3.elb.amazonaws.com>
+
+use **Thunder Client** to make the requests, without `http`
 <!---
 [comment]: it works with text, you can rename it how you want
 
