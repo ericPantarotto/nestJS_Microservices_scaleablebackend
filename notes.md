@@ -737,6 +737,12 @@ we add a new `templates`: `ingress.yaml` and then `helm upgrade sleepr .`, in ca
 `kubectl get ingress`
 
 ![image info](./_notes/7_sc2.png)
+
+## **<span style='color: #6e7a73'>Amazon Web Services**
+
+### **<span style='color: #6e7a73'>AWS Branch**
+
+**<span style='color: #ffc5a6'>Github:** <https://github.com/mguay22/sleepr/tree/aws>
 <!---
 [comment]: it works with text, you can rename it how you want
 
