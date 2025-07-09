@@ -737,6 +737,34 @@ we add a new `templates`: `ingress.yaml` and then `helm upgrade sleepr .`, in ca
 `kubectl get ingress`
 
 ![image info](./_notes/7_sc2.png)
+
+## **<span style='color: #6e7a73'>Amazon Web Services**
+
+### **<span style='color: #6e7a73'>AWS Branch**
+
+**<span style='color: #ffc5a6'>Github:** <https://github.com/mguay22/sleepr/tree/aws>
+
+### **<span style='color: #6e7a73'>CI/CD With CodePipeline**
+
+- Elastic Container Registry in search
+- Create the four 4 private repositories
+![image info](./_notes/8_sc1.png)
+
+- install AWS CLI <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
+  - `sudo snap install aws-cli --classic`, `aws --version`
+- `aws configure`
+  - AWS / ericpython1980 / security credentials / create access key
+  - AWS regions: <https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html>
+- choose one repository / View push commands
+  - `aws ecr get-login-password --region eu-west-3 | docker login --username AWS --password-stdin XXX.dkr.ecr.eu-west-3.amazonaws.com`
+  - `cd Documents/nestJS_Microservices_scaleablebackend/`
+  - `docker build -t reservations -f apps/reservations/Dockerfile .`
+  - `docker tag reservations:latest 135808955271.dkr.ecr.eu-west-3.amazonaws.com/reservations:latest`
+  - `docker push 135808955271.dkr.ecr.eu-west-3.amazonaws.com/reservations:latest`
+- buildspec.yaml
+- AWS / CodePipeline
+  - Connect Github
+  - IAM / Roles / Add EC2InstanceProfileForImageBuilderECRContainerBuilds to the build role
 <!---
 [comment]: it works with text, you can rename it how you want
 
