@@ -886,6 +886,10 @@ instead of building these services, we're going to use the production image dire
 - So next we want to do the same health check on our other TCP microservices. However, they don't have an HTTP port exposed. It's just a TCP port. So in order to ping it correctly, we're going to go ahead and install some new dependencies to support this.
 - `pnpm i -D tcp-ping ts-jest ts-node @types/node @types/tcp-ping`
 - in order to have jest properly compile our TypeScript code in this file, we will make use of the `ts-jest` package we installed: `jest.config.ts`
+
+### **<span style='color: #6e7a73'>Create & get reservations**
+
+after our changes to our app have been completed and cloud build, we'll go ahead and tell Docker compose to pull our images by running `docker compose pull`.
 <!---
 [comment]: it works with text, you can rename it how you want
 

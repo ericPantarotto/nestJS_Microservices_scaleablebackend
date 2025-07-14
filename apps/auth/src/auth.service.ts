@@ -22,6 +22,8 @@ export class AuthService {
     );
     const token = await this.jwtService.signAsync(tokenPayload);
     response.cookie('Authentication', token, { httpOnly: true, expires });
+
+    return token;
   }
 
   getHello(): string {

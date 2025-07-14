@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   CanActivate,
   ExecutionContext,
@@ -5,7 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { map, Observable, tap, catchError, of } from 'rxjs';
+import { catchError, map, Observable, of, tap } from 'rxjs';
 import { AUTH_SERVICE } from '../constants';
 import { UserDto } from '../dto';
 
@@ -16,21 +18,21 @@ export class JwtAuthGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    interface AuthenticatedRequest {
-      cookies?: { Authentication?: string };
-      headers?: { Authentication?: string };
-      user?: UserDto;
+    const jwt =
+      context.switchToHttp().getRequest().cookies?.Authentication ||
+      context.switchToHttp().getRequest().headers?.authentication;
+
+    if (!jwt) {
+      return false;
     }
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const jwt: string | undefined =
-      request.cookies?.Authentication || request.headers?.Authentication;
 
     return this.authClient
-      .send<UserDto>('authenticate', { Authentication: jwt })
+      .send<UserDto>('authenticate', {
+        Authentication: jwt,
+      })
       .pipe(
         tap((res) => {
-          const req = context.switchToHttp().getRequest<AuthenticatedRequest>();
-          req.user = res;
+          context.switchToHttp().getRequest().user = res;
         }),
         map(() => true),
         catchError(() => of(false)),
