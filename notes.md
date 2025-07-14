@@ -858,6 +858,34 @@ eksctl create iamserviceaccount \
 - copy the DNS name <k8s-default-sleepr-5502194e56-627965032.eu-west-3.elb.amazonaws.com>
 
 use **Thunder Client** to make the requests, without `http`
+
+## **<span style='color: #6e7a73'>E2E Tests**
+
+### **<span style='color: #6e7a73'>Health Checks**
+
+now we want to actually run our application and execute tests against it. So in order to do this, we're going to turn this end to end app into a Docker application that can run alongside of the other microservices in our application. So it can easily launch requests against them and make assertions.
+
+- create the `Dockerfile`
+- `docker build -t e2e .`
+- `docker run e2e`
+- So now that we have our end to end Docker image, we want to run the rest of our microservices alongside with it so that we can make real assertions in our end to end test; we need `docker-compose.yaml`
+
+**<span style='color: #8accb3'> Note:** , I want to mount our `/specs` folder into the `user/source/app/specs` directory. And that's so, if we make changes to our tests, they will be reflected in real time as we run the container.
+
+```yml
+volumes:
+  - ./specs:/usr/src/app/specs
+```
+
+instead of building these services, we're going to use the production image directly, either from docker-desktop or GCloud
+
+- `depends_on` to provide the services that we want to wait to be started before we start up our tests
+- `docker compose up 2e2`
+- `docker logs e2e-reservations-1` will show that pino-logger logging out the request from our integration tests with a 200 status code
+![image info](./_notes/9_sc1.png)
+- So next we want to do the same health check on our other TCP microservices. However, they don't have an HTTP port exposed. It's just a TCP port. So in order to ping it correctly, we're going to go ahead and install some new dependencies to support this.
+- `pnpm i -D tcp-ping ts-jest ts-node @types/node @types/tcp-ping`
+- in order to have jest properly compile our TypeScript code in this file, we will make use of the `ts-jest` package we installed: `jest.config.ts`
 <!---
 [comment]: it works with text, you can rename it how you want
 
