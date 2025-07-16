@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 describe('Reservations', () => {
   let jwt: string;
 
@@ -24,55 +27,47 @@ describe('Reservations', () => {
     jwt = await response.text();
   });
 
-  test('Gets', () => {
-    expect(jwt).toBeDefined();
-    console.log(jwt);
-
-    expect(true).toBeTruthy(); // Placeholder for actual test
+  test('Create & Get', async () => {
+    const createdReservation = await createReservation();
+    const responseGet = await fetch(
+      `http://reservations:3000/reservations/${createdReservation._id}`,
+      {
+        headers: {
+          Authentication: jwt,
+        },
+      },
+    );
+    const reservation = await responseGet.json();
+    expect(createdReservation).toEqual(reservation);
   });
 
-  // test('Create & Get', async () => {
-  //   expect(jwt).toBeDefined();
-
-  //   const createdReservation = await createReservation();
-
-  //   const responseGet = await fetch(
-  //     `http://reservations:3000/reservations/${createdReservation._id}`,
-  //     {
-  //       headers: {
-  //         Authentication: jwt,
-  //       },
-  //     },
-  //   );
-  //   const reservation = await responseGet.json();
-  //   expect(createdReservation).toEqual(reservation);
-  // });
-
-  // const createReservation = async () => {
-  //   const responseCreate = await fetch(
-  //     'http://reservations:3000/reservations',
-  //     {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         Authentication: jwt,
-  //       },
-  //       body: JSON.stringify({
-  //         startDate: '02-01-2025',
-  //         endDate: '02-05-2025',
-  //         placeId: '123',
-  //         invoiceId: '123',
-  //         charge: {
-  //           amount: 20.03,
-  //           card: {
-  //             token: 'tok_mastercard_debit',
-  //           },
-  //         },
-  //       }),
-  //     },
-  //   );
-  //   expect(responseCreate.ok).toBeTruthy();
-  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  //   return responseCreate.json();
-  // };
+  const createReservation = async () => {
+    const responseCreate = await fetch(
+      'http://reservations:3000/reservations',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authentication: jwt,
+        },
+        body: JSON.stringify({
+          startDate: '02-01-2023',
+          endDate: '02-05-2023',
+          placeId: '123',
+          invoiceId: '123',
+          charge: {
+            amount: 13,
+            card: {
+              cvc: '413',
+              exp_month: 12,
+              exp_year: 2027,
+              number: '4242 4242 4242 4242',
+            },
+          },
+        }),
+      },
+    );
+    expect(responseCreate.ok).toBeTruthy();
+    return responseCreate.json();
+  };
 });
