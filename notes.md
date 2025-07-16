@@ -890,6 +890,18 @@ instead of building these services, we're going to use the production image dire
 ### **<span style='color: #6e7a73'>Create & get reservations**
 
 after our changes to our app have been completed and cloud build, we'll go ahead and tell Docker compose to pull our images by running `docker compose pull`.
+
+## **<span style='color: #6e7a73'>Extra**
+
+### **<span style='color: #6e7a73'>User Roles**
+
+**<span style='color: #aacb73'>libs/common/src/decorators/roles.decorators.ts**
+
+`SetMetadata` from `@nestjs/common` that allows us to assign metadata to a class or function using a certain key
+
+**<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
+
+we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
 <!---
 [comment]: it works with text, you can rename it how you want
 
