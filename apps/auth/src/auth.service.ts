@@ -1,4 +1,8 @@
-import { UserDocument } from '@app/common';
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { User } from '@app/common';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -12,8 +16,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(user: UserDocument, response: Response) {
-    const tokenPayload: TokenPayload = { userId: user._id.toHexString() };
+  async login(user: User, response: Response) {
+    const tokenPayload: TokenPayload = { userId: user.id };
 
     const expires = new Date();
     expires.setSeconds(
