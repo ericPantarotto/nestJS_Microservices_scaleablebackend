@@ -902,6 +902,22 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>TypeORM & MySQL**
+
+### **<span style='color: #6e7a73'>Database Module**
+
+`docker compose up mysql` will start up this *MySQL* image
+
+instead of using *MySQL* workbench, you can also connect to the database image via: `docker exec -it nestjs_microservices_scaleablebackend-mysql-1 mysql -u root -p` and pass the password
+
+`pnpm i @nestjs/typeorm typeorm mysql2`
+
+**<span style='color: #aacb73'> libs/common/database/database.module.ts**
+
+`TypeOrmModule.forRootAsync`, `synchronize: true` is going to automatically create our database schema every time our app is launched, if it doesn't match.
+
+**<span style='color: #ffcd58'>IMPORTANT:**  this should not be used in production, otherwise you could potentially lose data.
 <!---
 [comment]: it works with text, you can rename it how you want
 

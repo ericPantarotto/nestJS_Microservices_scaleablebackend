@@ -54,7 +54,13 @@ services:
       - '9232:9229'
     volumes:
       - .:/usr/src/app
-  mongo:
-    image: mongo:latest
+  # mongo:
+  #   image: mongo:latest
+  #   ports:
+  #     - '27017:27017'
+  mysql:
+    image: mysql:latest
+    env_file:
+      - .env
     ports:
-      - '27017:27017'
+      - '3306:3306'
