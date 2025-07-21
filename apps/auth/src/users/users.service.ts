@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Role, User } from '@app/common';
 import {
   Injectable,
@@ -26,36 +23,25 @@ export class UsersService {
     return this.usersRepository.create(user);
   }
 
+  private async validateCreateUserDto(createUserDto: CreateUserDto) {
+    try {
+      await this.usersRepository.findOne({ email: createUserDto.email });
+    } catch {
+      return;
+    }
+    throw new UnprocessableEntityException('Email already exists.');
+  }
+
   async verifyUser(email: string, password: string) {
     const user = await this.usersRepository.findOne({ email });
-    const passwordIsValid = user
-      ? await bcrypt.compare(password, user.password)
-      : false;
-    if (!user || !passwordIsValid) {
-      throw new UnauthorizedException('Invalid email or password');
+    const passwordIsValid = await bcrypt.compare(password, user.password);
+    if (!passwordIsValid) {
+      throw new UnauthorizedException('Credentials are not valid.');
     }
-
     return user;
   }
 
   async getUser(getUserDto: GetUserDto) {
-    return await this.usersRepository.findOne(getUserDto);
-  }
-
-  private async validateCreateUserDto(createUserDto: CreateUserDto) {
-    try {
-      await this.usersRepository.findOne({
-        email: createUserDto.email,
-      });
-    } catch {
-      return;
-    }
-    throw new UnprocessableEntityException(
-      `User with email ${createUserDto.email} already exists`,
-    );
-  }
-
-  findAll() {
-    return this.usersRepository.find({});
+    return this.usersRepository.findOne(getUserDto, { roles: true });
   }
 }

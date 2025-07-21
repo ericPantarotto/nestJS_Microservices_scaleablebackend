@@ -1,5 +1,5 @@
-import { Column, Entity } from 'typeorm';
 import { AbstractEntity } from '../database';
+import { Column, Entity } from 'typeorm';
 
 @Entity()
 export class Role extends AbstractEntity<Role> {

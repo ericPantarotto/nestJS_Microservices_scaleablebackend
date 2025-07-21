@@ -4,7 +4,10 @@ Content-Type: application/json
 
 {
     "email": "abc2@exa2mple.com",
-    "password": "PasswordEcr2025!a@"
+    "password": "PasswordEcr2025!a@",
+    "roles": [
+        {"name": "Admin"}
+    ]
 }
 
 ###Login with the user

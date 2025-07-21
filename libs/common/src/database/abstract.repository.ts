@@ -12,7 +12,7 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
   protected abstract readonly logger: Logger;
 
   constructor(
-    private readonly entityRepository: Repository<T>,
+    private readonly itemsRepository: Repository<T>,
     private readonly entityManager: EntityManager,
   ) {}
 
@@ -24,10 +24,10 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
     where: FindOptionsWhere<T>,
     relations?: FindOptionsRelations<T>,
   ): Promise<T> {
-    const entity = await this.entityRepository.findOne({ where, relations });
+    const entity = await this.itemsRepository.findOne({ where, relations });
 
     if (!entity) {
-      this.logger.warn('Entity not found with where', where);
+      this.logger.warn('Document not found with where', where);
       throw new NotFoundException('Entity not found.');
     }
 
@@ -38,7 +38,7 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
     where: FindOptionsWhere<T>,
     partialEntity: QueryDeepPartialEntity<T>,
   ) {
-    const updateResult = await this.entityRepository.update(
+    const updateResult = await this.itemsRepository.update(
       where,
       partialEntity,
     );
@@ -52,10 +52,10 @@ export abstract class AbstractRepository<T extends AbstractEntity<T>> {
   }
 
   async find(where: FindOptionsWhere<T>) {
-    return this.entityRepository.findBy(where);
+    return this.itemsRepository.findBy(where);
   }
 
   async findOneAndDelete(where: FindOptionsWhere<T>) {
-    await this.entityRepository.delete(where);
+    await this.itemsRepository.delete(where);
   }
 }
