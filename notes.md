@@ -935,6 +935,50 @@ app.connectMicroservice({
 ```
 
 So instead of a host and port, we're now going to provide an array of URLs which is going to be the different brokers that we want to connect to.
+
+### **<span style='color: #6e7a73'>Test & Compare RabbitMQ**
+
+After introducing a `throw new Error()`, `docker container ls`, `docker container restart <id>`
+
+So now that our container restarted, you can see that it didn't try to reprocess that failed message it originally received. And that's because by default, Nestjs is automatically acknowledging all the messages that we process in Rabbitmq back to the broker.
+
+So we actually have to explicitly tell it to not automatically acknowledge all these messages by going back to the *main.ts*, with the `noAck` property.
+
+**<span style='color: #ffcd58'>IMPORTANT:** with this new property, once the payments container restarts, immediately after starting up here, you can see that it actually retried the message and ran into the same exact error that we had originally. So this is very powerful because unlike the TCP microservice, we actually have state here because of our queues.
+
+So after this message fails to get reprocessed, the broker never receives the Ack and next time we ask for the next message, well, we get that failed message and we can replay it. Maybe if a service was down, we can retry it. And that way we don't lose the message. **So this is a big benefit of using asynchronous messaging like Rabbitmq**.
+
+Additionally, we also have the added benefit of now having a queue so that if we can't process all these messages at once, like in TCP, we'll be hit with a bunch of requests at once. Instead, with a queue, we can process our messages in a controlled fashion
+
+`docker container restart 557dcc673a5f24c52fb31070c63f20c840ac40d2f975ef7482fb46a15b127a64`, we can see the same error:
+
+![image info](./_notes/12_sc1.png)
+
+#### **<span style='color: #6e7a73'>Manually acking messages**
+
+
+Now I want to show you how we can actually acknowledge these messages manually in case we want to handle this on our own.
+
+**<span style='color: #aacb73'> payments.controller.ts**
+
+```typescript
+@MessagePattern('create_charge')
+  @UsePipes(new ValidationPipe())
+  async createCharge(
+    @Payload() data: PaymentsCreateChargeDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    channel.ack(originalMsg);
+
+    throw new Error('Simulating payment error.');
+    return this.paymentsService.createCharge(data);
+  }
+```
+
+Now after our container restarts, you can see that it reprocesses the message. However, now we manually ack it, We should expect to see the message not get reprocessed any longer because we acknowledged it before we threw an error.
 <!---
 [comment]: it works with text, you can rename it how you want
 
