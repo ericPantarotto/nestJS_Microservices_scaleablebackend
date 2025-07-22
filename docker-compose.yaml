@@ -58,3 +58,8 @@ services:
     image: mongo:latest
     ports:
       - '27017:27017'
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - '5672:5672' # RabbitMQ AMQP protocol

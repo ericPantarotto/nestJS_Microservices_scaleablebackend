@@ -902,6 +902,39 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>RabbitMQ**
+
+### **<span style='color: #6e7a73'>Add RabbitMQ**
+
+we're going to look at using RabbitMQ as our transport mechanism to communicate between our microservices.
+
+Right now we know that we're using the TCP transport mechanism. However, there are also some downsides to using the TCP transport opposed to an asynchronous messaging transport like RabbitMQ.
+
+**<span style='color: #8accb3'> Note:**the problem with the TCP microservice, there's no way to retry any sort of failed messages in our system, and our messages can't be queued up one behind one another. So if we have a massive influx of messages into our system, our system can become overloaded and we can't respond gracefully. If we need to retry a message, we immediately throw this error and then this payments request is never retried because there's nowhere to actually save that message.
+
+Using an asynchronous microservice like RabbitMQ:
+
+- we have the idea of a queue that is introduced so a queue will hold our messages until they're ready to be processed. So if there's a large backlog of messages, we can handle them one at a time
+- And additionally, if we fail to process a message, we can put it back on the queue and keep trying until potentially this error is resolved and we don't actually lose that message
+
+`pnpm i amqplib amqp-connection-manager`
+
+we modify docker-compose where we can define a new service to actually run a rabbitMQ cluster that we can connect to from our application.
+
+**<span style='color: #aacb73'> main.ts**
+
+```typescript
+app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: [configService.getOrThrow('RABBITMQ_URI')],
+      queue: 'auth',
+    },
+  });
+```
+
+So instead of a host and port, we're now going to provide an array of URLs which is going to be the different brokers that we want to connect to.
 <!---
 [comment]: it works with text, you can rename it how you want
 
