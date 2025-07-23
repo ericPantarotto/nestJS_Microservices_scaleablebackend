@@ -902,6 +902,33 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>gRPC**
+
+### **<span style='color: #6e7a73'>Additional Resources**
+
+**<span style='color: #ffc5a6'>Introduction to gRPC:** <https://grpc.io/docs/what-is-grpc/introduction/>
+
+**<span style='color: #ffc5a6'>Language guide:** <https://protobuf.dev/programming-guides/proto3/>
+
+### **<span style='color: #6e7a73'>Protocol buffers**
+
+`pnpm i --save @grpc/grpc-js @grpc/proto-loader ts-proto`
+
+VSCODE extension: vscode-proto3
+
+**<span style='color: #ffc5a6'>protoc linux:** <https://protobuf.dev/installation/>  
+`sudo apt install -y protobuf-compiler`
+
+`protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./ --ts_proto_opt=nestJs=true ./proto/auth.proto`
+
+repeat this command line for *notifications* and *payments*
+
+we have this function called **authServiceControllerMethods** and this is actually a decorator that we're going to be able to apply to our `auth` controller and all of the necessary metadata is going to be automatically applied to our methods automatically so that when a message is sent to our service, Nestjs will automatically know which method it should be sent to.
+
+**<span style='color: #aacb73'> libs/common/src/auth/jwt-auth.guard.ts**
+
+**<span style='color: #ff3b3b'>Error:** remember in gRPC we can't use underscore
 <!---
 [comment]: it works with text, you can rename it how you want
 
