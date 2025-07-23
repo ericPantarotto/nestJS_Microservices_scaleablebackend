@@ -10,7 +10,6 @@ import { NotificationsService } from './notifications.service';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
-        PORT: Joi.number().default(3004),
         GOOGLE_OAUTH_CLIENT_ID: Joi.string().required(),
         GOOGLE_OAUTH_CLIENT_SECRET: Joi.string().required(),
         GOOGLE_OAUTH_REFRESH_TOKEN: Joi.string().required(),

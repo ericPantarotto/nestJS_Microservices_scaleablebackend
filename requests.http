@@ -29,7 +29,7 @@ Content-Type: application/json
   "placeId": "123",
   "invoiceId": "123",
   "charge": {
-    "amount": 20.03,
+    "amount": 20.01,
     "card": {
       "token": "tok_mastercard_debit"
     }

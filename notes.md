@@ -929,6 +929,10 @@ we have this function called **authServiceControllerMethods** and this is actual
 **<span style='color: #aacb73'> libs/common/src/auth/jwt-auth.guard.ts**
 
 **<span style='color: #ff3b3b'>Error:** remember in gRPC we can't use underscore
+
+**<span style='color: #aacb73'> apps/payments/src/payments.service.ts**
+
+I set the notification service dependency not using `onModuleInit` to show you that we can do this at runtime when the application is running and it doesn't always have to be done in on module init like we've done before
 <!---
 [comment]: it works with text, you can rename it how you want
 

@@ -1,13 +1,22 @@
-import { CurrentUser, UserDocument } from '@app/common';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import {
+  AuthServiceController,
+  AuthServiceControllerMethods,
+  CurrentUser,
+  UserDocument,
+} from '@app/common';
 import { Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Payload } from '@nestjs/microservices';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guards';
 
 @Controller('auth')
-export class AuthController {
+@AuthServiceControllerMethods()
+export class AuthController implements AuthServiceController {
   constructor(private readonly authService: AuthService) {}
 
   @UseGuards(LocalAuthGuard)
@@ -21,9 +30,11 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @MessagePattern('authenticate')
-  authenticate(@Payload() data: { user: object }) {
-    return data.user;
+  authenticate(@Payload() data: any) {
+    return {
+      ...data.user,
+      id: data.user._id,
+    };
   }
 
   @Get()

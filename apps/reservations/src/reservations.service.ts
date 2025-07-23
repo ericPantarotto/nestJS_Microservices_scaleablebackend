@@ -1,34 +1,40 @@
-import { PAYMENTS_SERVICE, UserDto } from '@app/common';
-import { Inject, Injectable } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices/client/client-proxy';
+import {
+  PAYMENTS_SERVICE_NAME,
+  PaymentsServiceClient,
+  UserDto,
+} from '@app/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ReservationRepository } from './reservation.repository';
 
 @Injectable()
-export class ReservationsService {
+export class ReservationsService implements OnModuleInit {
+  private paymentsService: PaymentsServiceClient;
+
   constructor(
     private readonly reservationRepository: ReservationRepository,
-    @Inject(PAYMENTS_SERVICE) private readonly paymentsService: ClientProxy,
+    @Inject(PAYMENTS_SERVICE_NAME) private readonly client: ClientGrpc,
   ) {}
+
+  onModuleInit() {
+    this.paymentsService = this.client.getService<PaymentsServiceClient>(
+      PAYMENTS_SERVICE_NAME,
+    );
+  }
 
   async create(
     createReservationDto: CreateReservationDto,
     { email, _id: userId }: UserDto,
   ) {
     const paymentResponse: unknown = await firstValueFrom(
-      this.paymentsService.send('create_charge', {
+      this.paymentsService.createCharge({
         ...createReservationDto.charge,
         email,
       }),
     );
-    // Optionally, assert or cast to the expected type if known, e.g.:
-    // const paymentResponse = await firstValueFrom<PaymentResponseType>(
-    //   this.paymentsService.send('create_charge', createReservationDto.charge),
-    // );
-
-    // console.log('Payment response:', paymentResponse);
 
     const reservation = {
       ...createReservationDto,

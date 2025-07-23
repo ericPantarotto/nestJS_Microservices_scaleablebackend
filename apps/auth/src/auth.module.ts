@@ -20,7 +20,6 @@ import { UsersModule } from './users/users.module';
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.number().default(3600), // Default to 1 hour
         HTTP_PORT: Joi.number().default(3001),
-        TCP_PORT: Joi.number().default(3002),
       }),
     }),
     JwtModule.registerAsync({
