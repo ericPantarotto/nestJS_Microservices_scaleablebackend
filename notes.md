@@ -956,6 +956,186 @@ GraphQLModule.forRoot<ApolloFederationDriverConfig>({
 ```
 
 We're going to set `autoSchemaFile` equal to `{ federation: 2 }` and what does auto schema file is going to do is it's going to automatically generate the GraphQL schema from our code.
+
+### **<span style='color: #6e7a73'>Auth Context & Playground**
+
+**<span style='color: #aacb73'> gateway.module.ts**
+
+```typescript
+useFactory: (configService: ConfigService) => ({
+        server: {
+          context: authContext,
+        },
+// ...
+});
+```
+
+So we'll pass in that auth context function which will get called every time a GraphQL request is sent in to our gateway.
+
+finally we need a way to actually attach the user that gets returned from the auth context onto the outgoing request that gets sent to our downstream microservices like our reservations service. So in order to do this, we can add an additional property to the gateway object that will be called `buildService`.
+
+**<span style='color: #ff3b3b'>Error:** Apollo Gateway: ECONNREFUSED Error While Connecting to Reservations Service
+
+I believe the issue is that the Reservations services isn't fully started by the time that Gateway service polls it for the GraphQL schema. I could confirm this by manually restarting the Gateway service after all services were up and running with `docker container restart <gateway-container-id>` and then it started up fine
+
+This is a common issue! Docker Compose only waits for containers to start, not for the services inside them (like a GraphQL server) to be ready to accept requests. As a result, your gateway might crash or fail schema introspection if the subgraph isn’t up yet.
+
+Use **wait-for-it** to delay the gateway until the subgraph is ready: <https://medium.com/@pavel.loginov.dev/wait-for-services-to-start-in-docker-compose-wait-for-it-vs-healthcheck-e0248f54962b>
+
+You can use a script like wait-for-it to block the gateway from starting until the dependent service is reachable.
+
+- Download wait-for-it.sh
+
+In your gateway folder: `curl -o wait-for-it.sh <https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh>`, `chmod +x wait-for-it.sh`
+
+- Update your Dockerfile to include the script
+
+`COPY apps/gateway/wait-for-it.sh /wait-for-it.sh`
+`RUN chmod +x /wait-for-it.sh`
+
+- Update your docker-compose.yml
+
+Update your gateway service to use the script in its entrypoint:
+
+```yml
+gateway:
+  build:
+    context: .
+    dockerfile: ./apps/gateway/Dockerfile
+    target: development
+  # command: pnpm run start:dev gateway
+  depends_on:
+    - reservations
+  entrypoint:
+    [
+      '/bin/sh',
+      '-c',
+      '/wait-for-it.sh reservations:3000 -- node dist/apps/gateway/main',
+    ]
+  command: pnpm run start:debug gateway
+  env_file:
+    - ./apps/gateway/.env
+  ports:
+    - '3004:3004'
+```
+
+This waits until <http://reservations:3000> is reachable before running the gateway.
+
+You can chain multiple wait-for-it.sh calls if you have more subgraphs. Your gateway will now wait until the subgraph is actually up and listening before it tries to load schemas — no more race conditions!
+
+### **<span style='color: #6e7a73'>Sorting additional issues**
+
+**<span style='color: #f3b4ff'> Copilot** *node:alpine* doesn't contain *bash* by default, which is used inside wait-for-it.sh, update `apps/gateway/dockerfile`
+
+```dockerfile
+FROM node:alpine AS development
+
+WORKDIR /usr/src/app
+
+# Install bash
+RUN apk add --no-cache bash
+```
+
+**<span style='color: #f3b4ff'> Copilot** old images `docker builder prune --all`, or for a lighter version `docker builder prune`
+
+**<span style='color: #f3b4ff'> Copilot** initial command provided by *Michael*, `COPY wait-for-it.sh /wait-for-it.sh` failed
+
+Your `docker-compose.yaml` specifies:
+
+```yml
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+```
+
+This means:
+
+- Docker is using . (the project root) as the build context
+- And it's using apps/gateway/Dockerfile as the Dockerfile
+- So all COPY instructions inside the Dockerfile must refer to files relative to the project root
+
+So when your Dockerfile says: `COPY wait-for-it.sh /wait-for-it.sh`
+
+Docker looks for wait-for-it.sh at `<project-root>/wait-for-it.sh`, not inside `apps/gateway/`
+
+**Fix**: Update your Dockerfile to use the correct relative path from the build context
+
+```dockerfile
+COPY apps/gateway/wait-for-it.sh /wait-for-it.sh
+```
+
+Because:
+
+- Build context root = `.`
+- Your `.sh` file = `apps/gateway/wait-for-it.sh`
+- So you must COPY it using that full path
+
+you can finally access to <http://localhost:3004/graphql> via a browser, the *graphQL playground*, essentially equivalent of using *Postman*
+
+```json
+{
+  "error": "Response not successful: Received status code 500"
+}
+```
+
+Right now our server cannot get a successful response back, and that's because we're not supplying any authentication headers to our server, which we know we need to be supplying in order to be authenticated to access our GraphQL server.
+
+pass the http-headers
+
+```json
+{
+  "authentication": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODg0MGRmMTc2ZDdiNzVhODlmYzY1MWQiLCJpYXQiOjE3NTM0ODQ3ODcsImV4cCI6MTc1MzQ4ODM4N30.0wkuuQVIn80luQvJgTCrZcjUPviCWz6nvRfqlZFOSFM"
+}
+```
+
+and for a `createReservation`
+
+```json
+mutation {
+  createReservation(createReservationInput: {
+     startDate: "02-01-2025",
+  endDate: "02-05-2025",
+  charge: {
+    amount: 20.03,
+    card: {
+      token: "tok_mastercard_debit"
+    }
+  }
+  }) {
+    startDate,
+    endDate,
+    invoiceId
+  }
+}
+```
+
+for `reservations`:
+
+```json
+query{
+  reservations{
+    startDate,
+    endDate,
+    invoiceId,
+    userId
+  }
+}
+```
+
+for `reservations`:
+
+```json
+  query{
+    reservation(id: "68840f881cf3a7e5419cfc1d"){
+      startDate,
+      endDate,
+      _id
+  }
+}
+```
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
@@ -982,6 +1162,7 @@ We're going to set `autoSchemaFile` equal to `{ federation: 2 }` and what does a
 -->
 
 <!-- markdownlint-enable MD033 -->
+<!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->

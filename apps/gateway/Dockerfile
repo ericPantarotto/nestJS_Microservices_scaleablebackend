@@ -2,6 +2,9 @@ FROM node:alpine AS development
 
 WORKDIR /usr/src/app
 
+# Install bash
+RUN apk add --no-cache bash
+
 COPY package*.json ./
 COPY pnpm-lock.yaml ./
 COPY tsconfig.json tsconfig.json
@@ -12,6 +15,9 @@ RUN npm install -g pnpm && \
 
 COPY  apps/gateway apps/gateway
 COPY libs libs
+
+COPY apps/gateway/wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
 
 RUN cd apps/gateway && pnpm install --no-frozen-lockfile
 
