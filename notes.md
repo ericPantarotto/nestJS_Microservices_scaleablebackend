@@ -943,6 +943,19 @@ Errors like ERR_PACKAGE_PATH_NOT_EXPORTED being cryptic at best
 
 - Check the exact version of a dependency  
 `pnpm list @apollo/server`
+
+### **<span style='color: #6e7a73'>Reservations**
+
+**<span style='color: #aacb73'> reservations.module.ts**
+
+```typescript
+GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+    driver: ApolloFederationDriver,
+    autoSchemaFile: { federation: 2 },
+  }),
+```
+
+We're going to set `autoSchemaFile` equal to `{ federation: 2 }` and what does auto schema file is going to do is it's going to automatically generate the GraphQL schema from our code.
 <!---
 [comment]: it works with text, you can rename it how you want
 
