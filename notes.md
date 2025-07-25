@@ -902,6 +902,12 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>GraphQL API Gateway**
+
+### **<span style='color: #6e7a73'>Appollo Federation**
+
+**<span style='color: #ffc5a6'>API Gateway:** <https://www.apollographql.com/docs/federation/>
 <!---
 [comment]: it works with text, you can rename it how you want
 
