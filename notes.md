@@ -905,9 +905,44 @@ we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandl
 
 ## **<span style='color: #6e7a73'>GraphQL API Gateway**
 
-### **<span style='color: #6e7a73'>Appollo Federation**
+### **<span style='color: #6e7a73'>Apollo Federation**
 
 **<span style='color: #ffc5a6'>API Gateway:** <https://www.apollographql.com/docs/federation/>
+
+### **<span style='color: #6e7a73'>Apollo Federation Gateway**
+
+We of course have all of our Crud methods which are exposing all of our reservation Crud functionality and our auth controller, which is going to be exposing basic login and the user's controller to create users. And this is all being exposed through Http and this is all being exposed through rest APIs.
+
+However, I want to show you how we can build an API gateway using GraphQL and Apollo Federation so that we can stitch together all of our different microservices and expose any endpoint we want regardless of the microservice or the transport layer that's being used.
+
+So we'll be able to expose endpoints in our reservations, auth and payments, microservice using one microservice and to the end user, there's only going to be one endpoint that they need to use to be able to access all of these different microservices and they're all going to be combined together in our API gateway, which is really going to simplify things and make it very easy for us to expose external facing functionality in our app.
+
+`nest g app gateway`  
+
+### **<span style='color: #6e7a73'>install the dependencies to set up our GraphQL Apollo Federation server**
+
+`pnpm i --save @apollo/gateway @apollo/server @apollo/subgraph @nestjs/apollo @nestjs/graphql graphql`
+
+**<span style='color: #8accb3'> Note:** We're actually only going to be utilizing the Gateway module because this is where we're going to be setting up our GraphQL Apollo Server and exposing all of our other GraphQL microservices
+
+#### **<span style='color: #6e7a73'>Dependencies mismatch with Apollo**
+
+**<span style='color: #ff3b3b'>Apollo mismatch**
+
+Apollo releasing v5 without @nestjs/apollo being ready  
+pnpm resolving ^4 to v5 unless pinned  
+Errors like ERR_PACKAGE_PATH_NOT_EXPORTED being cryptic at best  
+
+- Forcing Downgrade a package from v5 to v4  
+`pnpm add @apollo/server@^4`
+
+- Reinstall all dependencies clean  
+
+`rm -rf node_modules pnpm-lock.yaml`
+`pnpm install`
+
+- Check the exact version of a dependency  
+`pnpm list @apollo/server`
 <!---
 [comment]: it works with text, you can rename it how you want
 

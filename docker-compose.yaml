@@ -54,6 +54,17 @@ services:
       - '9232:9229'
     volumes:
       - .:/usr/src/app
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: development
+    # command: pnpm run start:dev gateway
+    command: pnpm run start:debug gateway
+    env_file:
+      - ./apps/gateway/.env
+    ports:
+      - '3004:3004'
   mongo:
     image: mongo:latest
     ports:
