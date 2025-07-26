@@ -11,11 +11,12 @@ async function bootstrap() {
     transport: Transport.TCP,
     options: {
       host: '0.0.0.0',
-      port: Number(configService.get('PORT')),
+      port: Number(configService.get('PORT_TCP')),
     },
   });
 
   app.useLogger(app.get(Logger));
   await app.startAllMicroservices();
+  await app.listen(configService.getOrThrow('PORT_HTTP'));
 }
 void bootstrap();

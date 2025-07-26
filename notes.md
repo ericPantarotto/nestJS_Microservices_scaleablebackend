@@ -1023,7 +1023,7 @@ This waits until <http://reservations:3000> is reachable before running the gate
 
 You can chain multiple wait-for-it.sh calls if you have more subgraphs. Your gateway will now wait until the subgraph is actually up and listening before it tries to load schemas — no more race conditions!
 
-### **<span style='color: #6e7a73'>Sorting additional issues**
+#### **<span style='color: #6e7a73'>Sorting additional issues**
 
 **<span style='color: #f3b4ff'> Copilot** *node:alpine* doesn't contain *bash* by default, which is used inside wait-for-it.sh, update `apps/gateway/dockerfile`
 
@@ -1136,6 +1136,57 @@ for `reservations`:
 }
 ```
 
+### **<span style='color: #6e7a73'>Auth Service & Payments**
+
+**<span style='color: #8accb3'> Note:** if we look at our docs, we can see we have the user's query and mutation added to our super graph in our gateway schema, which already had reservations queries and mutation. So as an end user, this is **all just one schema.**
+
+Even though these are from different services underneath, it's all abstracted away, which makes this a great solution for exposing APIs like this.
+
+for `users`:
+
+```json
+query{
+  users{
+    email,
+    _id,
+    roles
+  }
+}
+```
+
+**<span style='color: #8accb3'> Note:** And notice this is the same user ID associated with the reservation that we created so we can see our **current user decorator** is working.
+
+and for a `createUser`
+
+```json
+mutation {
+  createUser(createUserInput: {
+    email: "test@test.com",
+    password: "someTest!Pwd1@",
+    roles: ["Admin"]
+  
+  }) {
+    _id,
+    roles,
+    email
+  }
+}
+```
+
+#### **<span style='color: #6e7a73'>Payments Service**
+
+let's go ahead and expose one more microservice. The payments microservice, which is currently actually locked down to the outside world because there's no way for an external service to call this TCP, TCP microservice.
+
+for `payments`:
+
+```json
+query{
+  payments{
+    id,
+    amount,
+  }
+}
+```
 <!---
 [comment]: it works with text, you can rename it how you want
 
@@ -1162,6 +1213,7 @@ for `reservations`:
 -->
 
 <!-- markdownlint-enable MD033 -->
+<!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
