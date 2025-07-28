@@ -22,7 +22,10 @@ services:
       dockerfile: ./apps/auth/Dockerfile
       target: development
     # command: pnpm run start:dev auth
-    command: pnpm run start:debug auth
+    # command: pnpm run start:debug auth
+    command: sh -c "pnpm prisma migrate deploy --schema apps/auth/prisma/schema.prisma && pnpm prisma generate --schema apps/auth/prisma/schema.prisma && pnpm run start:debug auth"
+    depends_on:
+      - postgres
     env_file:
       - ./apps/auth/.env
     ports:

@@ -950,7 +950,7 @@ Or combine everything in one line:
 | `\l`              | List all databases                       |
 | `\c <dbname>`     | Connect to a database                    |
 | `\dt`             | List tables in the current database      |
-| `\d <table_name>` | Show table schema (columns, types, etc.) |
+| `\d "<table_name>"` | Show table schema (columns, types, etc.) |
 | `\du`             | List users/roles                         |
 | `\q`              | Quit `psql`                              |
 
