@@ -902,6 +902,91 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>Prisma**
+
+### **<span style='color: #6e7a73'>Postgres**
+
+**<span style='color: #ff3b3b'>Error:** "root" execution of the PostgreSQL server is not permitted. The server must be started under an unprivileged user ID to prevent possible system security compromise.
+
+**<span style='color: #f3b4ff'> Copilot**
+
+You're seeing that error because you're trying to run PostgreSQL commands (like `postgres` or `pg_ctl`) as the `root` user inside the container, but PostgreSQL is designed to be run under an unprivileged user (typically `postgres`), for security reasons.
+
+To interact with the running PostgreSQL instance inside the container, **you should switch to the postgres user**, which is created by the official `postgres` image.
+
+#### **<span style='color: #6e7a73'>Correct way to access the container's PostgreSQL shell**
+
+`docker exec -it <container_id_or_name> bash`
+
+Then switch to the postgres user:
+
+`su - postgres`
+
+Now you can access the PostgreSQL shell:
+
+`psql`
+
+Or combine everything in one line:
+
+`docker exec -it --user postgres <container_id_or_name> psql`
+
+##### **<span style='color: #6e7a73'>Basic  Navigation**
+
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `\l`              | List all databases                       |
+| `\c <dbname>`     | Connect to a database                    |
+| `\dt`             | List tables in the current database      |
+| `\d <table_name>` | Show table schema (columns, types, etc.) |
+| `\du`             | List users/roles                         |
+| `\q`              | Quit `psql`                              |
+
+##### **<span style='color: #6e7a73'>Database operations**
+
+| Command                                            | Description                 |
+| -------------------------------------------------- | --------------------------- |
+| `CREATE DATABASE mydb;`                            | Create a new database       |
+| `DROP DATABASE mydb;`                              | Delete a database           |
+| `CREATE USER myuser WITH PASSWORD 'mypassword';`   | Create a new user           |
+| `GRANT ALL PRIVILEGES ON DATABASE mydb TO myuser;` | Grant permissions to a user |
+| `ALTER USER myuser WITH SUPERUSER;`                | Make a user a superuser     |
+
+##### **<span style='color: #6e7a73'>Table operations**
+
+| Command                                                    | Description    |
+| ---------------------------------------------------------- | -------------- |
+| `CREATE TABLE mytable (id SERIAL PRIMARY KEY, name TEXT);` | Create a table |
+| `INSERT INTO mytable (name) VALUES ('Alice');`             | Insert a row   |
+| `SELECT * FROM mytable;`                                   | Query data     |
+| `UPDATE mytable SET name = 'Bob' WHERE id = 1;`            | Update data    |
+| `DELETE FROM mytable WHERE id = 1;`                        | Delete data    |
+| `DROP TABLE mytable;`                                      | Delete a table |
+
+##### **<span style='color: #6e7a73'>Useful Info & Utilities**
+
+| Command     | Description                                  |
+| ----------- | -------------------------------------------- |
+| `\conninfo` | Show current connection info                 |
+| `\x`        | Toggle expanded output (great for wide rows) |
+| `\timing`   | Show execution time for queries              |
+| `\password` | Change password for the current user         |
+
+#### **<span style='color: #6e7a73'>Prisma**
+
+Let's go ahead and now plug in **Prisma** into our application so that we can get started with creating our own database for this application.
+
+we create a `package.json` inside our `reservations` service. So just like we've done before in our auth service and notification service to get some dependencies specific to just this running service, we're going to do the same thing now in our reservation service, because I want to install Prisma client just for this one service here in our Monorepo.
+
+I don't want to share this Prisma client with other services. Now, the reason why is because of the type generation that Prisma client offers us. We're going to be running this type generation in multiple different services, and we don't want these types to overwrite one another. We want each service to have its own independent Prisma client and its own set of types. As they are independent microservices.
+
+**<span style='color: #aacb73'> apps/reservations/**
+
+`pnpm i --save-dev dotenv-cli`  
+`pnpm i --save @prisma/client prisma`
+
+**<span style='color: #8accb3'> Note:** So we're going to want to install `@prisma/client` which is again going to be this client library that's going to establish the connection to our database and generate the types we need. However we're also going to install the `@prisma/dependency` in this Prisma dependency is essentially a CLI tool that's going to allow us to run migrations against the database based off of migration files we generate, to always ensure our database schema is in line with our schema definition.
+
 <!---
 [comment]: it works with text, you can rename it how you want
 
@@ -931,3 +1016,9 @@ we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandl
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
 <!-- markdownlint-enable MD024 -->
+  postgres:
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
