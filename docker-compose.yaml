@@ -5,7 +5,10 @@ services:
       dockerfile: ./apps/reservations/Dockerfile
       target: development
     # command: pnpm run start:dev reservations
-    command: pnpm run start:debug reservations
+    # command: pnpm run start:debug reservations
+    command: sh -c "pnpm prisma migrate deploy --schema apps/reservations/prisma/schema.prisma && pnpm prisma generate --schema apps/reservations/prisma/schema.prisma && pnpm run start:debug reservations"
+    depends_on:
+      - postgres
     env_file:
       - ./apps/reservations/.env
     ports:
