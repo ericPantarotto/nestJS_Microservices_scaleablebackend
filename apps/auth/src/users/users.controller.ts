@@ -1,4 +1,5 @@
-import { CurrentUser, UserDocument } from '@app/common';
+import { User } from '.prisma/client';
+import { CurrentUser } from '@app/common';
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,7 +16,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  getUser(@CurrentUser() user: UserDocument) {
+  getUser(@CurrentUser() user: User) {
     return user;
   }
 

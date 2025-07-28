@@ -4,24 +4,28 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { PrismaService } from '../prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
-import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(private readonly prismaService: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
     await this.validateCreateUserDto(createUserDto);
-    return this.usersRepository.create({
-      ...createUserDto,
-      password: await bcrypt.hash(createUserDto.password, 10),
+    return this.prismaService.user.create({
+      data: {
+        ...createUserDto,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
     });
   }
 
   async verifyUser(email: string, password: string) {
-    const user = await this.usersRepository.findOne({ email });
+    const user = await this.prismaService.user.findFirstOrThrow({
+      where: { email },
+    });
     const passwordIsValid = user
       ? await bcrypt.compare(password, user.password)
       : false;
@@ -33,13 +37,17 @@ export class UsersService {
   }
 
   async getUser(getUserDto: GetUserDto) {
-    return await this.usersRepository.findOne(getUserDto);
+    return this.prismaService.user.findUniqueOrThrow({
+      where: {
+        id: +getUserDto.id,
+      },
+    });
   }
 
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
     try {
-      await this.usersRepository.findOne({
-        email: createUserDto.email,
+      await this.prismaService.user.findFirstOrThrow({
+        where: { email: createUserDto.email },
       });
     } catch {
       return;
@@ -50,6 +58,6 @@ export class UsersService {
   }
 
   findAll() {
-    return this.usersRepository.find({});
+    return this.prismaService.user.findMany({});
   }
 }
