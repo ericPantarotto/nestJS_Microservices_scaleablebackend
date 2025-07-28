@@ -1020,6 +1020,12 @@ our setup is going to be a little bit different because we're running in this mo
 ![image info](./_notes/15_sc1.png)
 
 Go to `pgAdmin 4` / Databases *Reservations* / Schemas / Tables *Reservation*
+
+#### **<span style='color: #6e7a73'>Reservations Prisma Refactor**
+
+to connect to the database we use *nestJS* `onModuleInit`, the alternative would be to do this lazily. And the first time you interact with Prisma client it'll connect on its own.
+
+**<span style='color: #8accb3'> Note:** we get `$connect` from `await this.$connect();` from extending the`./prisma/client` that we have defined manually in our `schema.prisma`
 <!---
 [comment]: it works with text, you can rename it how you want
 
