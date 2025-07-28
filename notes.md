@@ -902,6 +902,538 @@ after our changes to our app have been completed and cloud build, we'll go ahead
 **<span style='color: #aacb73'>libs/common/src/auth/jwt-auth.guard.ts**
 
 we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandler()`, which is the context called next in the request pipeline
+
+## **<span style='color: #6e7a73'>TypeORM & MySQL**
+
+### **<span style='color: #6e7a73'>Database Module**
+
+`docker compose up mysql` will start up this *MySQL* image
+
+instead of using *MySQL* workbench, you can also connect to the database image via: `docker exec -it nestjs_microservices_scaleablebackend-mysql-1 mysql -u root -p` and pass the password
+
+`pnpm i @nestjs/typeorm typeorm mysql2`
+
+**<span style='color: #aacb73'> libs/common/database/database.module.ts**
+
+`TypeOrmModule.forRootAsync`, `synchronize: true` is going to automatically create our database schema every time our app is launched, if it doesn't match.
+
+**<span style='color: #ffcd58'>IMPORTANT:**  this should not be used in production, otherwise you could potentially lose data.
+
+## **<span style='color: #6e7a73'>RabbitMQ**
+
+### **<span style='color: #6e7a73'>Add RabbitMQ**
+
+we're going to look at using RabbitMQ as our transport mechanism to communicate between our microservices.
+
+Right now we know that we're using the TCP transport mechanism. However, there are also some downsides to using the TCP transport opposed to an asynchronous messaging transport like RabbitMQ.
+
+**<span style='color: #8accb3'> Note:**the problem with the TCP microservice, there's no way to retry any sort of failed messages in our system, and our messages can't be queued up one behind one another. So if we have a massive influx of messages into our system, our system can become overloaded and we can't respond gracefully. If we need to retry a message, we immediately throw this error and then this payments request is never retried because there's nowhere to actually save that message.
+
+Using an asynchronous microservice like RabbitMQ:
+
+- we have the idea of a queue that is introduced so a queue will hold our messages until they're ready to be processed. So if there's a large backlog of messages, we can handle them one at a time
+- And additionally, if we fail to process a message, we can put it back on the queue and keep trying until potentially this error is resolved and we don't actually lose that message
+
+`pnpm i amqplib amqp-connection-manager`
+
+we modify docker-compose where we can define a new service to actually run a rabbitMQ cluster that we can connect to from our application.
+
+**<span style='color: #aacb73'> main.ts**
+
+```typescript
+app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: [configService.getOrThrow('RABBITMQ_URI')],
+      queue: 'auth',
+    },
+  });
+```
+
+So instead of a host and port, we're now going to provide an array of URLs which is going to be the different brokers that we want to connect to.
+
+### **<span style='color: #6e7a73'>Test & Compare RabbitMQ**
+
+After introducing a `throw new Error()`, `docker container ls`, `docker container restart <id>`
+
+So now that our container restarted, you can see that it didn't try to reprocess that failed message it originally received. And that's because by default, Nestjs is automatically acknowledging all the messages that we process in Rabbitmq back to the broker.
+
+So we actually have to explicitly tell it to not automatically acknowledge all these messages by going back to the *main.ts*, with the `noAck` property.
+
+**<span style='color: #ffcd58'>IMPORTANT:** with this new property, once the payments container restarts, immediately after starting up here, you can see that it actually retried the message and ran into the same exact error that we had originally. So this is very powerful because unlike the TCP microservice, we actually have state here because of our queues.
+
+So after this message fails to get reprocessed, the broker never receives the Ack and next time we ask for the next message, well, we get that failed message and we can replay it. Maybe if a service was down, we can retry it. And that way we don't lose the message. **So this is a big benefit of using asynchronous messaging like Rabbitmq**.
+
+Additionally, we also have the added benefit of now having a queue so that if we can't process all these messages at once, like in TCP, we'll be hit with a bunch of requests at once. Instead, with a queue, we can process our messages in a controlled fashion
+
+`docker container restart 557dcc673a5f24c52fb31070c63f20c840ac40d2f975ef7482fb46a15b127a64`, we can see the same error:
+
+![image info](./_notes/12_sc1.png)
+
+#### **<span style='color: #6e7a73'>Manually acking messages**
+
+Now I want to show you how we can actually acknowledge these messages manually in case we want to handle this on our own.
+
+**<span style='color: #aacb73'> payments.controller.ts**
+
+```typescript
+@MessagePattern('create_charge')
+  @UsePipes(new ValidationPipe())
+  async createCharge(
+    @Payload() data: PaymentsCreateChargeDto,
+    @Ctx() context: RmqContext,
+  ) {
+    const channel = context.getChannelRef();
+    const originalMsg = context.getMessage();
+
+    channel.ack(originalMsg);
+
+    throw new Error('Simulating payment error.');
+    return this.paymentsService.createCharge(data);
+  }
+```
+
+Now after our container restarts, you can see that it reprocesses the message. However, now we manually ack it, We should expect to see the message not get reprocessed any longer because we acknowledged it before we threw an error.
+
+## **<span style='color: #6e7a73'>gRPC**
+
+### **<span style='color: #6e7a73'>Additional Resources**
+
+**<span style='color: #ffc5a6'>Introduction to gRPC:** <https://grpc.io/docs/what-is-grpc/introduction/>
+
+**<span style='color: #ffc5a6'>Language guide:** <https://protobuf.dev/programming-guides/proto3/>
+
+### **<span style='color: #6e7a73'>Protocol buffers**
+
+`pnpm i --save @grpc/grpc-js @grpc/proto-loader ts-proto`
+
+VSCODE extension: vscode-proto3
+
+**<span style='color: #ffc5a6'>protoc linux:** <https://protobuf.dev/installation/>  
+`sudo apt install -y protobuf-compiler`
+
+`protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./ --ts_proto_opt=nestJs=true ./proto/auth.proto`
+
+repeat this command line for *notifications* and *payments*
+
+we have this function called **authServiceControllerMethods** and this is actually a decorator that we're going to be able to apply to our `auth` controller and all of the necessary metadata is going to be automatically applied to our methods automatically so that when a message is sent to our service, Nestjs will automatically know which method it should be sent to.
+
+**<span style='color: #aacb73'> libs/common/src/auth/jwt-auth.guard.ts**
+
+**<span style='color: #ff3b3b'>Error:** remember in gRPC we can't use underscore
+
+**<span style='color: #aacb73'> apps/payments/src/payments.service.ts**
+
+I set the notification service dependency not using `onModuleInit` to show you that we can do this at runtime when the application is running and it doesn't always have to be done in on module init like we've done before
+
+## **<span style='color: #6e7a73'>GraphQL API Gateway**
+
+### **<span style='color: #6e7a73'>Apollo Federation**
+
+**<span style='color: #ffc5a6'>API Gateway:** <https://www.apollographql.com/docs/federation/>
+
+### **<span style='color: #6e7a73'>Apollo Federation Gateway**
+
+We of course have all of our Crud methods which are exposing all of our reservation Crud functionality and our auth controller, which is going to be exposing basic login and the user's controller to create users. And this is all being exposed through Http and this is all being exposed through rest APIs.
+
+However, I want to show you how we can build an API gateway using GraphQL and Apollo Federation so that we can stitch together all of our different microservices and expose any endpoint we want regardless of the microservice or the transport layer that's being used.
+
+So we'll be able to expose endpoints in our reservations, auth and payments, microservice using one microservice and to the end user, there's only going to be one endpoint that they need to use to be able to access all of these different microservices and they're all going to be combined together in our API gateway, which is really going to simplify things and make it very easy for us to expose external facing functionality in our app.
+
+`nest g app gateway`  
+
+### **<span style='color: #6e7a73'>install the dependencies to set up our GraphQL Apollo Federation server**
+
+`pnpm i --save @apollo/gateway @apollo/server @apollo/subgraph @nestjs/apollo @nestjs/graphql graphql`
+
+**<span style='color: #8accb3'> Note:** We're actually only going to be utilizing the Gateway module because this is where we're going to be setting up our GraphQL Apollo Server and exposing all of our other GraphQL microservices
+
+#### **<span style='color: #6e7a73'>Dependencies mismatch with Apollo**
+
+**<span style='color: #ff3b3b'>Apollo mismatch**
+
+Apollo releasing v5 without @nestjs/apollo being ready  
+pnpm resolving ^4 to v5 unless pinned  
+Errors like ERR_PACKAGE_PATH_NOT_EXPORTED being cryptic at best  
+
+- Forcing Downgrade a package from v5 to v4  
+`pnpm add @apollo/server@^4`
+
+- Reinstall all dependencies clean  
+
+`rm -rf node_modules pnpm-lock.yaml`
+`pnpm install`
+
+- Check the exact version of a dependency  
+`pnpm list @apollo/server`
+
+### **<span style='color: #6e7a73'>Reservations**
+
+**<span style='color: #aacb73'> reservations.module.ts**
+
+```typescript
+GraphQLModule.forRoot<ApolloFederationDriverConfig>({
+    driver: ApolloFederationDriver,
+    autoSchemaFile: { federation: 2 },
+  }),
+```
+
+We're going to set `autoSchemaFile` equal to `{ federation: 2 }` and what does auto schema file is going to do is it's going to automatically generate the GraphQL schema from our code.
+
+### **<span style='color: #6e7a73'>Auth Context & Playground**
+
+**<span style='color: #aacb73'> gateway.module.ts**
+
+```typescript
+useFactory: (configService: ConfigService) => ({
+        server: {
+          context: authContext,
+        },
+// ...
+});
+```
+
+So we'll pass in that auth context function which will get called every time a GraphQL request is sent in to our gateway.
+
+finally we need a way to actually attach the user that gets returned from the auth context onto the outgoing request that gets sent to our downstream microservices like our reservations service. So in order to do this, we can add an additional property to the gateway object that will be called `buildService`.
+
+**<span style='color: #ff3b3b'>Error:** Apollo Gateway: ECONNREFUSED Error While Connecting to Reservations Service
+
+I believe the issue is that the Reservations services isn't fully started by the time that Gateway service polls it for the GraphQL schema. I could confirm this by manually restarting the Gateway service after all services were up and running with `docker container restart <gateway-container-id>` and then it started up fine
+
+This is a common issue! Docker Compose only waits for containers to start, not for the services inside them (like a GraphQL server) to be ready to accept requests. As a result, your gateway might crash or fail schema introspection if the subgraph isn’t up yet.
+
+Use **wait-for-it** to delay the gateway until the subgraph is ready: <https://medium.com/@pavel.loginov.dev/wait-for-services-to-start-in-docker-compose-wait-for-it-vs-healthcheck-e0248f54962b>
+
+You can use a script like wait-for-it to block the gateway from starting until the dependent service is reachable.
+
+- Download wait-for-it.sh
+
+In your gateway folder: `curl -o wait-for-it.sh <https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh>`, `chmod +x wait-for-it.sh`
+
+- Update your Dockerfile to include the script
+
+`COPY apps/gateway/wait-for-it.sh /wait-for-it.sh`
+`RUN chmod +x /wait-for-it.sh`
+
+- Update your docker-compose.yml
+
+Update your gateway service to use the script in its entrypoint:
+
+```yml
+gateway:
+  build:
+    context: .
+    dockerfile: ./apps/gateway/Dockerfile
+    target: development
+  # command: pnpm run start:dev gateway
+  depends_on:
+    - reservations
+  entrypoint:
+    [
+      '/bin/sh',
+      '-c',
+      '/wait-for-it.sh reservations:3000 -- node dist/apps/gateway/main',
+    ]
+  command: pnpm run start:debug gateway
+  env_file:
+    - ./apps/gateway/.env
+  ports:
+    - '3004:3004'
+```
+
+This waits until <http://reservations:3000> is reachable before running the gateway.
+
+You can chain multiple wait-for-it.sh calls if you have more subgraphs. Your gateway will now wait until the subgraph is actually up and listening before it tries to load schemas — no more race conditions!
+
+#### **<span style='color: #6e7a73'>Sorting additional issues**
+
+**<span style='color: #f3b4ff'> Copilot** *node:alpine* doesn't contain *bash* by default, which is used inside wait-for-it.sh, update `apps/gateway/dockerfile`
+
+```dockerfile
+FROM node:alpine AS development
+
+WORKDIR /usr/src/app
+
+# Install bash
+RUN apk add --no-cache bash
+```
+
+**<span style='color: #f3b4ff'> Copilot** old images `docker builder prune --all`, or for a lighter version `docker builder prune`
+
+**<span style='color: #f3b4ff'> Copilot** initial command provided by *Michael*, `COPY wait-for-it.sh /wait-for-it.sh` failed
+
+Your `docker-compose.yaml` specifies:
+
+```yml
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+```
+
+This means:
+
+- Docker is using . (the project root) as the build context
+- And it's using apps/gateway/Dockerfile as the Dockerfile
+- So all COPY instructions inside the Dockerfile must refer to files relative to the project root
+
+So when your Dockerfile says: `COPY wait-for-it.sh /wait-for-it.sh`
+
+Docker looks for wait-for-it.sh at `<project-root>/wait-for-it.sh`, not inside `apps/gateway/`
+
+**Fix**: Update your Dockerfile to use the correct relative path from the build context
+
+```dockerfile
+COPY apps/gateway/wait-for-it.sh /wait-for-it.sh
+```
+
+Because:
+
+- Build context root = `.`
+- Your `.sh` file = `apps/gateway/wait-for-it.sh`
+- So you must COPY it using that full path
+
+you can finally access to <http://localhost:3004/graphql> via a browser, the *graphQL playground*, essentially equivalent of using *Postman*
+
+```json
+{
+  "error": "Response not successful: Received status code 500"
+}
+```
+
+Right now our server cannot get a successful response back, and that's because we're not supplying any authentication headers to our server, which we know we need to be supplying in order to be authenticated to access our GraphQL server.
+
+pass the http-headers
+
+```json
+{
+  "authentication": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODg0MGRmMTc2ZDdiNzVhODlmYzY1MWQiLCJpYXQiOjE3NTM0ODQ3ODcsImV4cCI6MTc1MzQ4ODM4N30.0wkuuQVIn80luQvJgTCrZcjUPviCWz6nvRfqlZFOSFM"
+}
+```
+
+and for a `createReservation`
+
+```json
+mutation {
+  createReservation(createReservationInput: {
+     startDate: "02-01-2025",
+  endDate: "02-05-2025",
+  charge: {
+    amount: 20.03,
+    card: {
+      token: "tok_mastercard_debit"
+    }
+  }
+  }) {
+    startDate,
+    endDate,
+    invoiceId
+  }
+}
+```
+
+for `reservations`:
+
+```json
+query{
+  reservations{
+    startDate,
+    endDate,
+    invoiceId,
+    userId
+  }
+}
+```
+
+for `reservations`:
+
+```json
+  query{
+    reservation(id: "68840f881cf3a7e5419cfc1d"){
+      startDate,
+      endDate,
+      _id
+  }
+}
+```
+
+### **<span style='color: #6e7a73'>Auth Service & Payments**
+
+**<span style='color: #8accb3'> Note:** if we look at our docs, we can see we have the user's query and mutation added to our super graph in our gateway schema, which already had reservations queries and mutation. So as an end user, this is **all just one schema.**
+
+Even though these are from different services underneath, it's all abstracted away, which makes this a great solution for exposing APIs like this.
+
+for `users`:
+
+```json
+query{
+  users{
+    email,
+    _id,
+    roles
+  }
+}
+```
+
+**<span style='color: #8accb3'> Note:** And notice this is the same user ID associated with the reservation that we created so we can see our **current user decorator** is working.
+
+and for a `createUser`
+
+```json
+mutation {
+  createUser(createUserInput: {
+    email: "test@test.com",
+    password: "someTest!Pwd1@",
+    roles: ["Admin"]
+  
+  }) {
+    _id,
+    roles,
+    email
+  }
+}
+```
+
+#### **<span style='color: #6e7a73'>Payments Service**
+
+let's go ahead and expose one more microservice. The payments microservice, which is currently actually locked down to the outside world because there's no way for an external service to call this TCP, TCP microservice.
+
+for `payments`:
+
+```json
+query{
+  payments{
+    id,
+    amount,
+  }
+}
+```
+
+## **<span style='color: #6e7a73'>Prisma**
+
+### **<span style='color: #6e7a73'>Postgres**
+
+#### **<span style='color: #6e7a73'>Postgres - Docker localhost**
+
+**<span style='color: #ffc5a6'>pgAdmin:** <https://www.pgadmin.org/>
+
+pgAdmin 4 / register new server
+
+- name: local
+- connection host: localhost
+- password: postgres
+
+#### **<span style='color: #6e7a73'>Postgres - Docker container**
+
+**<span style='color: #ff3b3b'>Error:** "root" execution of the PostgreSQL server is not permitted. The server must be started under an unprivileged user ID to prevent possible system security compromise.
+
+**<span style='color: #f3b4ff'> Copilot**
+
+You're seeing that error because you're trying to run PostgreSQL commands (like `postgres` or `pg_ctl`) as the `root` user inside the container, but PostgreSQL is designed to be run under an unprivileged user (typically `postgres`), for security reasons.
+
+To interact with the running PostgreSQL instance inside the container, **you should switch to the postgres user**, which is created by the official `postgres` image.
+
+#### **<span style='color: #6e7a73'>Correct way to access the container's PostgreSQL shell**
+
+`docker exec -it <container_id_or_name> bash`
+
+Then switch to the postgres user:
+
+`su - postgres`
+
+Now you can access the PostgreSQL shell:
+
+`psql`
+
+Or combine everything in one line:
+
+`docker exec -it --user postgres <container_id_or_name> psql`
+
+##### **<span style='color: #6e7a73'>Basic  Navigation**
+
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `\l`              | List all databases                       |
+| `\c <dbname>`     | Connect to a database                    |
+| `\dt`             | List tables in the current database      |
+| `\d "<table_name>"` | Show table schema (columns, types, etc.) |
+| `\du`             | List users/roles                         |
+| `\q`              | Quit `psql`                              |
+
+##### **<span style='color: #6e7a73'>Database operations**
+
+| Command                                            | Description                 |
+| -------------------------------------------------- | --------------------------- |
+| `CREATE DATABASE mydb;`                            | Create a new database       |
+| `DROP DATABASE mydb;`                              | Delete a database           |
+| `CREATE USER myuser WITH PASSWORD 'mypassword';`   | Create a new user           |
+| `GRANT ALL PRIVILEGES ON DATABASE mydb TO myuser;` | Grant permissions to a user |
+| `ALTER USER myuser WITH SUPERUSER;`                | Make a user a superuser     |
+
+##### **<span style='color: #6e7a73'>Table operations**
+
+| Command                                                    | Description    |
+| ---------------------------------------------------------- | -------------- |
+| `CREATE TABLE mytable (id SERIAL PRIMARY KEY, name TEXT);` | Create a table |
+| `INSERT INTO mytable (name) VALUES ('Alice');`             | Insert a row   |
+| `SELECT * FROM mytable;`                                   | Query data     |
+| `UPDATE mytable SET name = 'Bob' WHERE id = 1;`            | Update data    |
+| `DELETE FROM mytable WHERE id = 1;`                        | Delete data    |
+| `DROP TABLE mytable;`                                      | Delete a table |
+
+##### **<span style='color: #6e7a73'>Useful Info & Utilities**
+
+| Command     | Description                                  |
+| ----------- | -------------------------------------------- |
+| `\conninfo` | Show current connection info                 |
+| `\x`        | Toggle expanded output (great for wide rows) |
+| `\timing`   | Show execution time for queries              |
+| `\password` | Change password for the current user         |
+
+#### **<span style='color: #6e7a73'>Prisma**
+
+Let's go ahead and now plug in **Prisma** into our application so that we can get started with creating our own database for this application.
+
+we create a `package.json` inside our `reservations` service. So just like we've done before in our auth service and notification service to get some dependencies specific to just this running service, we're going to do the same thing now in our reservation service, because I want to install Prisma client just for this one service here in our Monorepo.
+
+I don't want to share this Prisma client with other services. Now, the reason why is because of the type generation that Prisma client offers us. We're going to be running this type generation in multiple different services, and we don't want these types to overwrite one another. We want each service to have its own independent Prisma client and its own set of types. As they are independent microservices.
+
+**<span style='color: #aacb73'> apps/reservations/**
+
+`pnpm i --save-dev dotenv-cli`  
+`pnpm i --save @prisma/client prisma`
+
+**<span style='color: #8accb3'> Note:** So we're going to want to install `@prisma/client` which is again going to be this client library that's going to establish the connection to our database and generate the types we need. However we're also going to install the `@prisma/dependency` in this Prisma dependency is essentially a CLI tool that's going to allow us to run migrations against the database based off of migration files we generate, to always ensure our database schema is in line with our schema definition.
+
+### **<span style='color: #6e7a73'>Prisma Schema & Migrations**
+
+- Install *Prisma* VSCODE
+
+#### **<span style='color: #6e7a73'>schema.prisma**
+
+`
+generator client {
+ provider = "prisma-client-js"
+ output = "../node_modules/.prisma/client"
+ binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+`
+
+our setup is going to be a little bit different because we're running in this mono repo. And remember we're going to actually be generating these types in our Docker container when we're running in production, which is actually a different runtime. Our Docker image is based off of Node Alpine, which in my case is obviously a different runtime. I'm running on Mac OS and this is going to be in Linux. So we need to do a couple of things to get our client types generated properly in all environments.
+
+**<span style='color: #ffcd58'>IMPORTANT:** The connection string to our Postgres database is going to be different when we're running locally on our machine here versus when we're inside of Docker and utilizing this `.env`.
+
+![image info](./_notes/15_sc1.png)
+
+Go to `pgAdmin 4` / Databases *Reservations* / Schemas / Tables *Reservation*
+
+#### **<span style='color: #6e7a73'>Reservations Prisma Refactor**
+
+to connect to the database we use *nestJS* `onModuleInit`, the alternative would be to do this lazily. And the first time you interact with Prisma client it'll connect on its own.
+
+**<span style='color: #8accb3'> Note:** we get `$connect` from `await this.$connect();` from extending the`./prisma/client` that we have defined manually in our `schema.prisma`
 <!---
 [comment]: it works with text, you can rename it how you want
 
