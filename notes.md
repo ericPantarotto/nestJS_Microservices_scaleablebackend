@@ -907,6 +907,18 @@ we make use of `Reflector` from `@nestjs/core` and passing the `context.getHandl
 
 ### **<span style='color: #6e7a73'>Postgres**
 
+#### **<span style='color: #6e7a73'>Postgres - Docker localhost**
+
+**<span style='color: #ffc5a6'>pgAdmin:** <https://www.pgadmin.org/>
+
+pgAdmin 4 / register new server
+
+- name: local
+- connection host: localhost
+- password: postgres
+
+#### **<span style='color: #6e7a73'>Postgres - Docker container**
+
 **<span style='color: #ff3b3b'>Error:** "root" execution of the PostgreSQL server is not permitted. The server must be started under an unprivileged user ID to prevent possible system security compromise.
 
 **<span style='color: #f3b4ff'> Copilot**
@@ -987,6 +999,27 @@ I don't want to share this Prisma client with other services. Now, the reason wh
 
 **<span style='color: #8accb3'> Note:** So we're going to want to install `@prisma/client` which is again going to be this client library that's going to establish the connection to our database and generate the types we need. However we're also going to install the `@prisma/dependency` in this Prisma dependency is essentially a CLI tool that's going to allow us to run migrations against the database based off of migration files we generate, to always ensure our database schema is in line with our schema definition.
 
+### **<span style='color: #6e7a73'>Prisma Schema & Migrations**
+
+- Install *Prisma* VSCODE
+
+#### **<span style='color: #6e7a73'>schema.prisma**
+
+`
+generator client {
+ provider = "prisma-client-js"
+ output = "../node_modules/.prisma/client"
+ binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+`
+
+our setup is going to be a little bit different because we're running in this mono repo. And remember we're going to actually be generating these types in our Docker container when we're running in production, which is actually a different runtime. Our Docker image is based off of Node Alpine, which in my case is obviously a different runtime. I'm running on Mac OS and this is going to be in Linux. So we need to do a couple of things to get our client types generated properly in all environments.
+
+**<span style='color: #ffcd58'>IMPORTANT:** The connection string to our Postgres database is going to be different when we're running locally on our machine here versus when we're inside of Docker and utilizing this `.env`.
+
+![image info](./_notes/15_sc1.png)
+
+Go to `pgAdmin 4` / Databases *Reservations* / Schemas / Tables *Reservation*
 <!---
 [comment]: it works with text, you can rename it how you want
 
